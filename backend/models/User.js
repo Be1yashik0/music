@@ -25,7 +25,7 @@ const User = sequelize.define('User', {
   },
 })
 
-sequelize.sync() // Создает таблицу, если не существует
+sequelize.sync()
   .then(() => console.log('User table created'))
   .catch(err => console.error('Error creating User table:', err))
 

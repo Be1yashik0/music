@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken')
 require('dotenv').config()
 
 const app = express()
-app.use(cors()) // Разрешить запросы с фронтенда
+app.use(cors())
 app.use(express.json())
 
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
@@ -19,7 +19,6 @@ sequelize.authenticate()
 
 const User = require('./models/User')
 
-// Эндпоинт для регистрации
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { email, password, username } = req.body
@@ -30,13 +29,13 @@ app.post('/api/auth/register', async (req, res) => {
       username,
       preferences: {},
     })
-    res.status(201).json({ message: 'User registered', userId: user.user_id })
+    const token = jwt.sign({ userId: user.user_id }, process.env.JWT_SECRET, { expiresIn: '1h' })
+    res.status(201).json({ message: 'User registered', userId: user.user_id, username, token })
   } catch (error) {
     res.status(400).json({ message: 'Registration failed', error: error.message })
   }
 })
 
-// Эндпоинт для входа
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body
@@ -49,7 +48,7 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid password' })
     }
     const token = jwt.sign({ userId: user.user_id }, process.env.JWT_SECRET, { expiresIn: '1h' })
-    res.json({ message: 'Login successful', token })
+    res.json({ message: 'Login successful', token, userId: user.user_id, username: user.username })
   } catch (error) {
     res.status(500).json({ message: 'Login failed', error: error.message })
   }

@@ -7,11 +7,11 @@ const vuetify = createVuetify({
   components,
   directives,
   theme: {
-    defaultTheme: 'light', // Можно позже настроить темную тему
+    defaultTheme: 'light',
     themes: {
       light: {
         colors: {
-          primary: '#1976D2', // Синий, как в Spotify
+          primary: '#1976D2',
           secondary: '#424242',
           accent: '#82B1FF',
         },
@@ -20,4 +20,4 @@ const vuetify = createVuetify({
   },
 })
 
-export default vuetify  
+export default vuetify

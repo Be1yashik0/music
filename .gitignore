@@ -1,0 +1,48 @@
+# Node.js зависимости
+node_modules/
+npm-debug.log
+package-lock.json
+
+# Среда разработки
+.env
+.env.local
+.env.development
+.env.production
+
+# Временные файлы
+*.log
+*.tmp
+*.swp
+
+# Скомпилированные файлы и сборки
+dist/
+build/
+
+# Локальные конфигурации IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Файлы базы данных
+*.sqlite
+*.db
+
+# Файлы загрузок (аудио, обложки, аватары)
+backend/uploads/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Локальные тесты и отладка
+coverage/
+*.lcov
+
+
+
+frontend/src/assets/icons/

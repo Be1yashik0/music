@@ -43,6 +43,7 @@ Desktop.ini
 coverage/
 *.lcov
 
+*.env
 
 
 frontend/src/assets/icons/

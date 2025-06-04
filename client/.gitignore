@@ -1,0 +1,49 @@
+# Зависимости Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Среда разработки
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Временные файлы и сборки
+dist/
+build/
+*.log
+
+# Файлы редакторов и IDE
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Операционные системы
+.DS_Store
+Thumbs.db
+
+# Загруженные файлы (аудио, обложки, аватары)
+backend/uploads/
+backend/uploads/audio/
+backend/uploads/covers/
+backend/uploads/avatars/
+
+# База данных
+*.sqlite
+*.db
+
+# Тесты и отчёты
+coverage/
+*.lcov
+
+# Кэш и временные файлы
+*.cache
+*.tmp
+temp/
+
+# Локальные конфигурации
+package-lock.json
+yarn.lock

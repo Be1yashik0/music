@@ -1,0 +1,24 @@
+const { DataTypes } = require('sequelize')
+const sequelize = require('../config/db')
+
+const FavoriteAlbum = sequelize.define('FavoriteAlbum', {
+  user_id: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: 'users',
+      key: 'user_id',
+    },
+  },
+  album_id: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: 'albums',
+      key: 'album_id',
+    },
+  },
+}, {
+  tableName: 'favorite_albums',
+  timestamps: false,
+})
+
+module.exports = (sequelize, DataTypes) => FavoriteAlbum

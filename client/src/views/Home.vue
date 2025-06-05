@@ -2,8 +2,8 @@
   <v-container fluid>
     <v-app-bar app color="primary" dark class="rounded-app-bar">
       <v-btn icon @click="drawer = !drawer" class="menu-toggle rounded-btn" fixed top left>
-        <v-icon v-if="!drawer"><application-menu theme="outline" size="24" fill="#000000"/></v-icon>
-        <v-icon v-else><close theme="outline" size="24" fill="#000000"/></v-icon>
+        <v-icon v-if="!drawer"><application-menu theme="outline" size="24" fill="#ffffff"/></v-icon>
+        <v-icon v-else><close theme="outline" size="24" fill="#ffffff"/></v-icon>
       </v-btn>
       <v-toolbar-title class="title">T-shka</v-toolbar-title>
       <v-spacer></v-spacer>
@@ -18,7 +18,7 @@
         style="max-width: 300px;"
         hide-details
         @input="search"
-      ></v-text-field>
+      ></v-text-field> 
       <v-menu v-if="authStore.user" offset-y>
         <template v-slot:activator="{ props }">
           <v-btn icon v-bind="props" class="rounded-btn">
@@ -82,7 +82,7 @@
       <v-container fluid>
         <h2 class="mb-4 rounded-title">Рекомендуемые треки</h2>
         <v-row>
-          <v-col v-for="track in tracks" :key="track.track_id" cols="12" sm="6" md="4" lg="3">
+          <v-col v-for="track in tracks" :key="track.track_id" cols="12" sm="6" md="5" lg="2">
             <v-card
               class="track-card rounded-card"
               @click="showTrackDetails(track)"
@@ -100,7 +100,7 @@
 
         <h2 class="mb-4 mt-8 rounded-title">Популярные альбомы</h2>
         <v-row>
-          <v-col v-for="album in albums" :key="album.album_id" cols="12" sm="6" md="4" lg="3">
+          <v-col v-for="album in albums" :key="album.album_id" cols="12" sm="6" md="4" lg="2">
             <v-card
               class="album-card rounded-card"
               @click="showAlbumDetails(album)"
@@ -211,6 +211,9 @@
       @trackEnded="onTrackEnd"
       @playTrackFromQueue="playTrackFromQueue"
       @removeFromQueue="removeFromQueue"
+      @shuffleQueue="shuffleQueue"
+      @updateQueue="queue = $event"
+      @updateCurrentQueueIndex="updateCurrentQueueIndex"
       class="rounded-player"
     />
   </v-container>
@@ -385,34 +388,75 @@ export default {
       this.queue.splice(this.currentQueueIndex + 1, 0, ...album.tracks)
       this.$root.showSnackbar(`Альбом "${album.title}" добавлен для воспроизведения следующим`)
     },
-    playNextTrack() {
-      if (this.currentQueueIndex < this.queue.length - 1) {
-        this.currentQueueIndex++
-        this.currentTrack = this.queue[this.currentQueueIndex]
-        this.isPlaying = true
+    shuffleQueue(currentIndex) {
+      const currentTrack = this.queue[currentIndex]
+      let shuffled = this.queue.filter((_, i) => i !== currentIndex)
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
       }
+      this.queue = [currentTrack, ...shuffled]
+      this.currentQueueIndex = 0
+      this.currentTrack = this.queue[this.currentQueueIndex]
+      this.isPlaying = true
+    },
+    playNextTrack() {
+      if (this.shuffle && this.queue.length > 1) {
+        const nextIndex = Math.floor(Math.random() * this.queue.length)
+        this.currentQueueIndex = nextIndex
+      } else if (this.currentQueueIndex < this.queue.length - 1) {
+        this.currentQueueIndex++
+      } else {
+        this.currentQueueIndex = 0 // Повтор очереди
+      }
+      this.currentTrack = this.queue[this.currentQueueIndex]
+      this.isPlaying = true
     },
     playPrevTrack() {
       if (this.currentQueueIndex > 0) {
         this.currentQueueIndex--
-        this.currentTrack = this.queue[this.currentQueueIndex]
-        this.isPlaying = true
+      } else if (this.repeatMode === 'queue') {
+        this.currentQueueIndex = this.queue.length - 1
       }
-    },
-    togglePlay() {
-      this.isPlaying = !this.isPlaying
+      this.currentTrack = this.queue[this.currentQueueIndex]
+      this.isPlaying = true
+      },
+      togglePlay() {
+        this.isPlaying = !this.isPlaying
     },
     onTrackEnd() {
+      // if (this.shuffle && this.queue.length > 1) {
+      //   const nextIndex = Math.floor(Math.random() * this.queue.length)
+      //   this.currentQueueIndex = nextIndex
+      // } else if (this.currentQueueIndex < this.queue.length - 1) {
+      //   this.currentQueueIndex++
+      // } else if (this.repeatMode === 'queue') {
+      //   this.currentQueueIndex = 0
+      // } else if (this.repeatMode === 'single') {
+      //   // Ничего не делаем, т.к. Player сам перезапустит трек
+      // } else {
+      //   this.isPlaying = false
+      //   this.currentTrack = null
+      //   this.currentQueueIndex = -1
+      //   this.queue = []
+      // }
+      // if (this.currentQueueIndex !== -1) {
+      //   this.currentTrack = this.queue[this.currentQueueIndex]
+      //   this.isPlaying = true
+      // }
+      
+      
       if (this.currentQueueIndex < this.queue.length - 1) {
         this.currentQueueIndex++
         this.currentTrack = this.queue[this.currentQueueIndex]
         this.isPlaying = true
       } else {
-        this.isPlaying = false
-        this.currentTrack = null
-        this.currentQueueIndex = -1
-        this.queue = []
+        this.currentQueueIndex = 0 // Повтор очереди
+        this.currentTrack = this.queue[this.currentQueueIndex]
+        this.isPlaying = true
       }
+  
+    
     },
     formatDate(date) {
       return new Date(date).toLocaleDateString()
@@ -429,7 +473,8 @@ export default {
         this.currentQueueIndex = -1
         this.isPlaying = false
       }
-    }
+    },
+    
   },
   
   async mounted() {
@@ -463,6 +508,7 @@ export default {
   width: 100vw !important;
   left: 0 !important;
   right: 0 !important;
+  
 }
 .rounded-btn {
   border-radius: 50px !important;
@@ -514,7 +560,7 @@ export default {
 }
 
 .title {
-  color: #000000;
+  color: #fdfdfd;
 }
 
 .dialog-cover {

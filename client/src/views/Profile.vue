@@ -140,7 +140,7 @@ export default {
   padding: 24px;
   border-radius: 12px !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  background-color: #ffffff;
+  /* background-color: #ffffff; */
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -207,7 +207,7 @@ export default {
 }
 
 .rounded-btn--primary {
-  background-color: #1976D2 !important;
+  background-color: #1976D2;
   color: #ffffff !important;
 }
 

@@ -269,7 +269,7 @@ export default {
   padding: 16px;
   border-radius: 12px !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  background-color: #ffffff;
+  /* background-color: #ffffff; */
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -289,7 +289,7 @@ export default {
 }
 
 .v-tab--selected {
-  color: #1976D2 !important;
+  /* color: #1976D2 !important; */
   background-color: rgba(25, 118, 210, 0.1);
 }
 
@@ -350,21 +350,21 @@ export default {
 }
 
 .v-btn--primary {
-  background-color: #1976D2 !important;
-  color: #ffffff !important;
+  background-color: #1976D2 ;
+  color: #ffffff !;
 }
 
 .v-btn--primary:hover {
-  background-color: #1565C0 !important;
+  background-color: #1565C0 ;
 }
 
 .v-btn--secondary {
-  background-color: #424242 !important;
+  background-color: #424242 ;
   color: #ffffff !important;
 }
 
 .v-btn--secondary:hover {
-  background-color: #212121 !important;
+  background-color: #212121 ;
 }
 
 .v-btn--red {
@@ -387,7 +387,7 @@ export default {
 .v-card.mb-2 {
   border-radius: 8px !important;
   padding: 12px;
-  background-color: #f5f5f5;
+  /* background-color: #f5f5f5; */
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 

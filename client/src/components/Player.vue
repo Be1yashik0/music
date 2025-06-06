@@ -1,109 +1,166 @@
 <template>
-  <v-footer app color="primary" class="rounded-player" padless>
-    <v-row align="center" no-gutters class="w-100">
-      <!-- Информация о треке -->
-      <v-col cols="12" sm="4" class="d-flex align-center pa-2" @click="toggleExpanded">
-        <v-img
-          :src="`http://localhost:5000${track.cover_url || '/uploads/covers/default.jpg'}`"
-          height="80"
+  <div class="player-container" :class="{ 'expanded-container': expanded }">
+    <div v-if="expanded" class="overlay" @click="toggleExpanded"></div>
+    <v-footer app :class="['rounded-player', { 'expanded-player': expanded }]" padless>
+      <v-row v-if="!expanded" align="center" no-gutters class="w-100">
+        <!-- Информация о треке и обложка (мини-режим) -->
+        <v-col cols="12" sm="4" class="d-flex align-center pa-2" @click="toggleExpanded">
+          <v-img
+            :src="`http://localhost:5000${track.cover_url || '/uploads/covers/default.jpg'}`"
+            height="80"
+            class="rounded-card mr-3 cursor-pointer"
+          ></v-img>
+          <div >
+            <div class="text-subtitle-2">{{ track.title }}</div>
+            <div class="text-caption">{{ track.artist }}</div>
+          </div>
+        </v-col>
+
+        <!-- Управление воспроизведением (мини-режим) -->
+        <v-col cols="12" sm="4" class="text-center">
+          <v-btn icon @click="$emit('playPrev')" class="rounded-btn player-reg">
+            <go-start theme="outline" size="22" stroke-linejoin="bevel"/>
+          </v-btn>
+          <v-btn icon @click="$emit('togglePlay')" class="rounded-btn">
+            <component :is="isPlaying ? 'pause' : 'play-one'" :size="35" />
+          </v-btn>
+          <v-btn icon @click="$emit('playNext')" class="rounded-btn">
+            <go-end theme="outline" size="22" stroke-linejoin="bevel"/>
+          </v-btn>
+          <div class="mt-0.5">
+            <v-slider
+              v-model="currentTime"
+              :max="duration"
+              thumb-size="10"
+              @update:modelValue="seek"
+              class="progress-slider"
+            ></v-slider>
+          </div>
+        </v-col>
+
+        <!-- Управление громкостью и очередь (мини-режим) -->
+        <v-col cols="12" sm="4" class="d-flex justify-end align-center pa-2">
+          <div class="volume-control">
+            <component
+              :is="volume === 0 ? 'volume-mute' : volume < 0.5 ? 'volume-small' : 'volume-notice'"
+              theme="outline"
+              size="24"
+            />
+            <v-slider
+              v-model="volume"
+              :max="1"
+              :step="0.01"
+              thumb-size="10"
+              class="volume-slider"
+              style="max-width: 120px;"
+              @update:modelValue="updateVolume"
+            ></v-slider>
+          </div>
+          <v-btn icon @click="toggleRepeat" class="rounded-btn">
+            <play-once :size="24" :fill="repeatMode === 'single' ? '#BB86FC' : '#FFFFFF'" />
+          </v-btn>
+          <v-btn icon @click="toggleShuffle" class="rounded-btn">
+            <!-- <shuffle-one v-if="shuffle" :size="24" />
+            <shuffle v-else :size="24" /> -->
+            <shuffle-one :size="24" :fill="shuffle ? '#BB86FC' : '#FFFFFF'" />
+
+          </v-btn>
+          <v-btn icon @click="showQueue = !showQueue" class="rounded-btn ml-2">
+            <music-list theme="outline" size="30" />
+          </v-btn>
+        </v-col>
+      </v-row>
+
+      <!-- Расширенный плеер -->
+      <v-row v-if="expanded" align="center" no-gutters class="w-100 expanded-row">
+        <v-col cols="6" class="d-flex justify-center align-center pa-4">
+          <v-img
+            :src="`http://localhost:5000${track.cover_url || '/uploads/covers/default.jpg'}`"
+            height="450"
+            width="450"
+            class="rounded-card"
+          ></v-img>
+        </v-col>
+        <v-col cols="6" class="d-flex flex-column justify-space-between pa-4">
           
-          class="rounded-card mr-3 cursor-pointer"
-          :class="{ 'expanded-cover': isExpanded }"
-        ></v-img>
-        <div class="text-white" v-if="!isExpanded">
-          <div class="text-subtitle-2">{{ track.title }}</div>
-          <div class="text-caption">{{ track.artist }}</div>
-        </div>
-        <div v-if="isExpanded" class="expanded-info">
-          <div class="text-subtitle-1">{{ track.title }}</div>
-          <div class="text-caption">{{ track.artist }}</div>
-          <div class="text-caption">Жанр: {{ track.genre || 'Не указан' }}</div>
-          <div class="text-caption">Дата выпуска: {{ formatDate(track.release_date) }}</div>
-          <div class="text-caption">Прослушивания: {{ track.listens || 0 }}</div>
-        </div>
-      </v-col>
+          <div>
+            <!-- Управление воспроизведением -->
+            <v-row class="text-center">
+              <div  >
+                <div >{{ track.title }}-{{ track.artist }}</div>
+              </div>
+              <!-- <v-card-title>{{  track.title  }}</v-card-title>
+              <v-card-subtitle>{{ track.artist }}</v-card-subtitle> -->
+              <v-col cols="12">
+                <v-btn icon @click="$emit('playPrev')" class="rounded-btn player-reg">
+                  <go-start theme="outline" size="30" stroke-linejoin="bevel"/>
+                </v-btn>
+                <v-btn icon @click="$emit('togglePlay')" class="rounded-btn">
+                  <component :is="isPlaying ? 'pause' : 'play-one'" :size="40" />
+                </v-btn>
+                <v-btn icon @click="$emit('playNext')" class="rounded-btn">
+                  <go-end theme="outline" size="30" stroke-linejoin="bevel"/>
+                </v-btn>
+              </v-col>
+              <v-col cols="12" class="mt-2">
+                <v-slider
+                  v-model="currentTime"
+                  :max="duration"
+                  thumb-size="10"
+                  @update:modelValue="seek"
+                  class="progress-slider"
+                ></v-slider>
+              </v-col>
+            </v-row>
 
-      <!-- Управление воспроизведением -->
-      <v-col cols="12" sm="4" class="text-center">
-        <v-btn icon @click="$emit('playPrev')" class="rounded-btn">
-          <go-start theme="outline" size="22" fill="#FFFFFF" strokeLinejoin="bevel"/>        
-        </v-btn>
-        <v-btn icon @click="$emit('togglePlay')" class="rounded-btn">
-          <component :is="isPlaying ? 'pause' : 'play-one'" :size="35" fill="#FFFFFF"/>
-          <!-- <play-one theme="outline" size="24" fill="#333"/>
-          <pause theme="outline" size="24" fill="#000000"/> -->
-        </v-btn>
-        <v-btn icon @click="$emit('playNext')" class="rounded-btn">
-          <go-end theme="outline" size="22" fill="#FFFFFF" strokeLinejoin="bevel"/>        
-        </v-btn>
-        
-        <div class="mt-0.5">
-          
-          <v-slider
-          
-            v-model="currentTime"
-            :max="duration"
-            color="white"
-            track-color="grey"
-            thumb-size="10"
-            @update:modelValue="seek"
-            class="progress-slider"
-            
-          ></v-slider>
-        
-          <!-- <div class="text-caption text-white">
-            {{ formatTime(currentTime) }} / {{ formatTime(duration) }}
-          </div> -->
-        </div>
-      </v-col>
+            <!-- Управление громкостью и очередь -->
+            <v-row class="mt-4">
+              <v-col cols="12" class="d-flex justify-end align-center">
+                <div class="volume-control">
+                  <component
+                    :is="volume === 0 ? 'volume-mute' : volume < 0.5 ? 'volume-small' : 'volume-notice'"
+                    theme="outline"
+                    size="24"
+                  />
+                  <v-slider
+                    v-model="volume"
+                    :max="1"
+                    :step="0.01"
+                    thumb-size="10"
+                    class="volume-slider"
+                    style="max-width: 150px;"
+                    @update:modelValue="updateVolume"
+                  ></v-slider>
+                </div>
+                <v-btn icon @click="toggleRepeat" class="rounded-btn ml-2">
+                  <play-once :size="24" :fill="repeatMode === 'single' ? '#BB86FC' : '#FFFFFF'" />
+                </v-btn>
+                <v-btn icon @click="toggleShuffle" class="rounded-btn ml-2">
+                  <!-- <shuffle-one v-if="shuffle" :size="24" />
+                  <shuffle v-else :size="24" /> -->
+                  <shuffle-one :size="24" :fill="shuffle ? '#BB86FC' : '#FFFFFF'" />
 
-
-
-      <!-- Управление громкостью и очередь -->
-      <v-col cols="12" sm="4" class="d-flex justify-end align-center pa-2">
-        <div class="volume-control">
-          <volume-small theme="outline" size="24" fill="#FFFFFF"/>
-          <v-slider
-            v-model="volume"
-            :max="1"
-            :step="0.01"
-            color="white"
-            track-color="grey"
-            thumb-size="10"
-            class="volume-slider"
-            style="max-width: 120px;"
-            @update:modelValue="updateVolume"
-          ></v-slider>
-        </div>
-
-        <v-btn icon @click="toggleRepeat" class="rounded-btn">          
-          <component :is="repeatMode === 'queue' ? 'refresh' : 'play-once'" :size="24" fill="#FFFFFF"/>
-        </v-btn>
-        <!-- <v-btn icon @click="play-once" class="rounded-btn">
-          <repeat-one :size="24" :fill="repeatMode === 'single' ? '#BB86FC' : '#FFFFFF'" />
-        </v-btn> -->
-        
-        <v-btn icon @click="toggleShuffle" class="rounded-btn">
-          <shuffle-one v-if="toggleShuffle" :size="24" fill="#FFFFFF"/>
-          <shuffle v-else :size="24" />
-        </v-btn>
-
-        <v-btn icon @click="showQueue = !showQueue" class="rounded-btn ml-2">
-          <music-list theme="outline" size="30" fill="#FFFFFF"/>
-        </v-btn>
-      </v-col>
+                </v-btn>
+                <v-btn icon @click="showQueue = !showQueue" class="rounded-btn ml-2">
+                  <music-list theme="outline" size="30" />
+                </v-btn>
+              </v-col>
+            </v-row>
+          </div>
+        </v-col>
+      </v-row>
 
       <!-- Очередь воспроизведения -->
       <v-card v-if="showQueue && queue.length > 0" class="queue-panel">
         <v-card-title class="queue-title">
           Очередь
-          <!-- <v-spacer></v-spacer> -->
-          <v-btn icon @click="showQueue = false" class="rounded-btn " >
-            <close theme="outline" size="24" fill="#FFFFFF"/>
+          <v-spacer></v-spacer>
+          <v-btn icon @click="showQueue = false" class="rounded-btn">
+            <close theme="outline" size="24" />
           </v-btn>
         </v-card-title>
         <v-card-text class="queue-content">
-          <v-list dense  class="queue-box">
+          <v-list dense class="queue-box">
             <v-list-item
               v-for="(queuedTrack, index) in queue"
               :key="queuedTrack.track_id"
@@ -111,17 +168,15 @@
               @click="playTrackFromQueue(index)"
             >
               <v-list-item-title class="queue-track-title">
-                <!-- {{ queuedTrack.title }} - {{ queuedTrack.artist }} -->
                 <div class="d-flex align-center">
                   <acoustic v-if="index === currentQueueIndex" theme="outline" size="24" fill="#BB86FC" class="mr-2"/>
-                  <div> 
+                  <div>
                     <div class="text-subtitle-2">{{ queuedTrack.title }}</div>
                     <div class="text-caption">{{ queuedTrack.artist }}</div>
                   </div>
                 </div>
-              
-                <v-btn icon @click.stop="removeFromQueue(index)" class="rounded-btn" >
-                  <Delete :size="14" fill="#FFFFFF"/>
+                <v-btn icon @click.stop="removeFromQueue(index)" class="rounded-btn">
+                  <Delete :size="14" />
                 </v-btn>
               </v-list-item-title>
             </v-list-item>
@@ -137,8 +192,8 @@
         @loadedmetadata="updateDuration"
         @ended="$emit('trackEnded')"
       ></audio>
-    </v-row>
-  </v-footer>
+    </v-footer>
+  </div>
 </template>
 
 <script>
@@ -204,6 +259,9 @@ export default {
     }
   },
   methods: {
+    toggleExpanded() {
+      this.expanded = !this.expanded
+    },
     updateTime() {
       this.currentTime = this.$refs.audioPlayer.currentTime
     },
@@ -272,8 +330,7 @@ export default {
         this.$refs.audioPlayer.play()
       } else if (this.repeatMode === 'single') {
         this.$refs.audioPlayer.currentTime = 0
-        this.$refs.audioPlayer.play() // Убедимся, что трек повторяется
-      } else { // repeatMode === 'queue'
+        this.$refs.audioPlayer.play() 
         if (this.currentQueueIndex < this.queue.length - 1) {
           this.currentQueueIndex++
           this.currentTrack = this.queue[this.currentQueueIndex]
@@ -300,6 +357,51 @@ export default {
 </script>
 
 <style scoped>
+.player-container {
+  position: relative;
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.825); 
+  
+  z-index: 1000;
+  display: none;
+}
+
+.expanded-container .overlay {
+  display: block;
+}
+
+.rounded-player {
+  border-radius: 12px !important;
+  height: 100px;
+  width: 100%;
+  transition: height 0.3s ease, width 0.3s ease transform 0.3s ease;
+}
+
+.expanded-player {
+  height: 60% !important;
+  width: 80% !important;
+  position: fixed;
+  top: 25%;
+  left: 10% !important;
+  transform: translate(-50%, 0%);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.expanded-row {
+  height: 100%;
+  flex: 1;
+  width: 100%;
+}
 
 .volume-control {
   display: flex;
@@ -308,41 +410,21 @@ export default {
 }
 
 .volume-slider {
-  max-width: 0; /* Скрыт по умолчанию */
+  width: 0;
   opacity: 0;
-  transition: max-width 0.3s ease, opacity 0.3s ease;
+  transition: width 0.3s ease, opacity 0.3s ease;
   margin-left: 8px;
-  height: 35px;
+  height: 24px;
+  overflow: hidden;
 }
 
 .volume-control:hover .volume-slider {
-  width: 120px; /* Появляется при наведении */
+  width: 150px;
   opacity: 1;
-}
-.rounded-player {
-  border-radius: 12px !important;
-  height: 100px; 
-  transition: height 0.3s ease;
 }
 
 .progress-slider, .volume-slider {
   margin: 0 10px;
-}
-.text-white {
-  color: white;
-}
-.queue-panel {
-  position: absolute;
-  bottom: 70px;
-  width: 100%;
-  /* background-color: #424242; */
-  z-index: 1000;
-}
-
-
-.volume-control {
-  display: flex;
-  align-items: center;
 }
 
 .queue-panel {
@@ -351,72 +433,44 @@ export default {
   right: 20px;
   width: 320px;
   height: 400px;
-  background-color: #3d55e2;
-  color: white;
-  z-index: 1000;
+  z-index: 1001;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-  
-  
 }
-
-.queue-box {
-  background-color: #3d55e2;
-}
-
-
-/* .queue-panel {
-  position: fixed;
-  bottom: 90px;
-  right: 10px;
-  width: 320px;
-  height: 340px;
-  color: white;
-  z-index: 1000;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
-  overflow: hidden;
-} */
 
 .queue-title {
-  /* background-color: #0b79ef; */
   padding: 8px 16px;
   font-weight: 500;
   border-top-left-radius: 12px;
   border-top-right-radius: 12px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  /* max-width: 300px; */
   display: flex;
   align-items: center;
-  justify-content: space-between; 
+  justify-content: space-between;
 }
 
 .queue-content {
   padding: 8px;
-  /* max-height: 200px; */
+  height: 340px;
   overflow-y: auto;
-  height: 300px;
-  background-color: #3d55e2;  
-  
-
 }
 
 .queue-track-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.queue-track-title .d-flex {
+  flex: 1;
+  overflow: hidden;
+}
+
+.queue-track-title div {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  /* max-width: 300px; */
-  display: flex;
-  align-items: center;
-  /* width: 100%; */
-  color: aliceblue;
-  
-}
-
-.queue-track-title .rounded-btn {
-  margin-left: auto; /* Перемещаем кнопку удаления в конец */
+  max-width: 180px;
 }
 
 .active-track {
@@ -424,39 +478,34 @@ export default {
   border-radius: 8px;
 }
 
-/* .active-track .queue-track-title {
-  color: #bb86fc;
-} */
-
 .v-list-item:hover {
-  /* background-color: rgba(202, 29, 29, 0.831); */
+  background-color: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
 }
 
 .rounded-btn {
   border-radius: 50px !important;
-  background-color: transparent !important; /* Прозрачный фон */
-  opacity: 0.8; /* Лёгкая прозрачность для видимости */
-  transition: opacity 0.2s; /* Плавное изменение прозрачности */
-  /* size: 18px; */
+  background-color: transparent !important;
+  opacity: 0.8;
+  transition: opacity 0.2s;
   box-shadow: 0 0px 0px rgba(0, 0, 0, 0.5);
-  
-
-  
 }
 
 .rounded-btn:hover {
-  opacity: 1; /* Полная видимость при наведении */
+  opacity: 1;
 }
 
 .queue-panel .rounded-btn {
-  background-color: rgba(255, 255, 255, 0.1) ; /* Лёгкий фон для контраста в очереди */
+  background-color: rgba(255, 255, 255, 0.1);
   opacity: 0.9;
-  
 }
 
 .queue-panel .rounded-btn:hover {
   opacity: 1;
   background-color: rgba(235, 17, 17, 0.991) !important;
+}
+
+.cursor-pointer {
+  cursor: pointer;
 }
 </style>

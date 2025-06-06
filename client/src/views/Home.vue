@@ -2,9 +2,10 @@
   <v-container fluid>
     <v-app-bar app color="primary" dark class="rounded-app-bar">
       <v-btn icon @click="drawer = !drawer" class="menu-toggle rounded-btn" fixed top left>
-        <v-icon v-if="!drawer"><application-menu theme="outline" size="24" fill="#ffffff"/></v-icon>
-        <v-icon v-else><close theme="outline" size="24" fill="#ffffff"/></v-icon>
+        <v-icon v-if="!drawer"><application-menu theme="outline" size="24" /></v-icon>
+        <v-icon v-else><close theme="outline" size="24"/></v-icon>
       </v-btn>
+
       <v-toolbar-title class="title">T-shka</v-toolbar-title>
       <v-spacer></v-spacer>
       <v-text-field
@@ -19,6 +20,13 @@
         hide-details
         @input="search"
       ></v-text-field> 
+      <v-list-item @click="toggleTheme" class="toggle-theme">
+        <v-list-item-icon>
+          <Moon  v-if="$vuetify.theme.current.dark" :size="24" class="menu-icon" />
+          <SunOne v-else :size="24" class="menu-icon" />
+        </v-list-item-icon>
+        <v-list-item-title>{{ $vuetify.theme.current.dark ?  'Тёмная тема' : 'Светлая тема' }}</v-list-item-title>
+      </v-list-item>
       <v-menu v-if="authStore.user" offset-y>
         <template v-slot:activator="{ props }">
           <v-btn icon v-bind="props" class="rounded-btn">
@@ -38,14 +46,15 @@
           </v-card-text>
           <v-divider></v-divider>
           <v-list>
-            <v-list-item @click="authStore.logout">
-              <v-list-item-title>Выйти</v-list-item-title>
-            </v-list-item>
+           
             <v-list-item to="/profile" v-if="authStore.user">
               <!-- <v-list-item-icon>
                 <img src="@/assets/icons/profile.svg" alt="profile" class="menu-icon" style="width: 24px; height: 24px;" />
               </v-list-item-icon> -->
               <v-list-item-title>Профиль</v-list-item-title>
+            </v-list-item>
+            <v-list-item @click="authStore.logout" class = "logOutBtn">
+              <v-list-item-title>Выйти</v-list-item-title>
             </v-list-item>
           </v-list>
         </v-card>
@@ -58,20 +67,21 @@
         <v-list-item to="/" exact>
           <v-list-item-icon>
             
-            <img src="@/assets/icons/home.svg" alt="home" class="menu-icon" style="width: 24px; height: 24px;" />
+            <!-- <img src="@/assets/icons/home.svg" alt="home" class="menu-icon" style="width: 24px; height: 24px;" /> -->
+            <!-- <home theme="outline" size="24" fill="#000000"/> -->
             Главная
           </v-list-item-icon>
         </v-list-item>
         
         <v-list-item to="/playlists" v-if="authStore.user">
           <v-list-item-icon>
-            <img src="@/assets/icons/list-music.svg" alt="list-music" class="menu-icon" style="width: 24px; height: 24px;" />
+            <!-- <img src="@/assets/icons/list-music.svg" alt="list-music" class="menu-icon" style="width: 24px; height: 24px;" /> -->
             Мои плейлисты
           </v-list-item-icon>
         </v-list-item>
         <v-list-item to="/upload" v-if="authStore.user">
           <v-list-item-icon>
-            <img src="@/assets/icons/download.svg" alt="download" class="menu-icon" style="width: 24px; height: 24px;" />
+            <!-- <img src="@/assets/icons/download.svg" alt="download" class="menu-icon" style="width: 24px; height: 24px;" /> -->
             Загрузить музыку
           </v-list-item-icon>
         </v-list-item>
@@ -80,7 +90,7 @@
 
     <v-main>
       <v-container fluid>
-        <h2 class="mb-4 rounded-title">Рекомендуемые треки</h2>
+        <h2 class="mb-4 rounded-title">Новые треки</h2>
         <v-row>
           <v-col v-for="track in tracks" :key="track.track_id" cols="12" sm="6" md="5" lg="2">
             <v-card
@@ -98,7 +108,7 @@
           </v-col>
         </v-row>
 
-        <h2 class="mb-4 mt-8 rounded-title">Популярные альбомы</h2>
+        <h2 class="mb-4 mt-8 rounded-title">Новые альбомы</h2>
         <v-row>
           <v-col v-for="album in albums" :key="album.album_id" cols="12" sm="6" md="4" lg="2">
             <v-card
@@ -131,16 +141,16 @@
         <v-card-text>
           <div class="d-flex align-center">
             <v-btn icon @click="playTrack(selectedTrack)" class="rounded-btn buttn">
-              <play-one theme="outline" size="24" fill="#333"/>
+              <play-one theme="outline" size="24" />
             </v-btn>
             <v-btn icon @click="playNext(selectedTrack)" class="rounded-btn buttn">
-              <to-bottom-one theme="outline" size="24" fill="#000000"/>
+              <to-bottom-one theme="outline" size="24" />
             </v-btn>
             <v-btn icon @click="addToQueue(selectedTrack)" class="rounded-btn buttn">
-              <fold-up-one theme="outline" size="24" fill="#000000"/>
+              <fold-up-one theme="outline" size="24" />
             </v-btn>
             <v-btn icon @click="addToFavorites(selectedTrack)" class="rounded-btn buttn">
-              <like theme="outline" size="24" fill="#000000"/>
+              <like theme="outline" size="24" />
             </v-btn>
           </div>
           <div class="mt-4">
@@ -161,6 +171,20 @@
         ></v-img>
         <v-card-title>{{ selectedAlbum.title }}</v-card-title>
         <v-card-subtitle>{{ selectedAlbum.artist }}</v-card-subtitle>
+        <div class="d-flex align-center">
+            <v-btn icon @click="playAlbum(selectedAlbum)" class="rounded-btn buttn">
+              <play-one theme="outline" size="32" />
+            </v-btn>
+            <v-btn icon @click="playAlbumNext(selectedAlbum)" class="rounded-btn buttn">
+              <to-bottom-one theme="outline" size="32" />
+            </v-btn>
+            <v-btn icon @click="addAlbumToQueue(selectedAlbum)" class="rounded-btn buttn">
+              <fold-up-one theme="outline" size="30" />
+            </v-btn>
+            <v-btn icon @click="addToPlaylist(selectedAlbum)" class="rounded-btn buttn">
+              <like theme="outline" size="30" />
+            </v-btn>
+          </div>
         <v-card-text>
           <v-list>
             <v-list-item
@@ -173,24 +197,25 @@
               <v-list-item-title>{{ track.title }}</v-list-item-title>
               <div class="action-buttons">
                 <v-btn icon @click="playAlbum(selectedAlbum, track)" class="rounded-btn buttn">
-                  <play-one theme="outline" size="24" fill="#333"/>
+                  <play-one theme="outline" size="24" />
                 </v-btn>
                 <v-btn icon @click="addToQueue(track)" class="rounded-btn buttn">
-                  <fold-up-one theme="outline" size="24" fill="#000000"/>
+                  <fold-up-one theme="outline" size="24" />
 
                 </v-btn>
                 <v-btn icon @click="playNext(track)" class="rounded-btn buttn">
-                  <to-bottom-one theme="outline" size="24" fill="#000000"/>
+                  <to-bottom-one theme="outline" size="24" />
                 </v-btn>
                 <v-btn icon @click="addToFavorites(track)" class="rounded-btn buttn">
-                  <like theme="outline" size="24" fill="#000000"/>
+                  <like theme="outline" size="24" />
                 </v-btn>
               </div>
             </div>
             </v-list-item>
           </v-list>
           <div class="mt-4">
-            <v-btn color="primary" @click="addToPlaylist(selectedAlbum)" block class="rounded-btn">Добавить в мои плейлисты</v-btn>
+
+
             <p>Дата выпуска: {{ formatDate(selectedAlbum.release_date) }}</p>
             <p>Прослушиваний: {{ selectedAlbum.listens }}</p>
             <p>Жанр: {{ selectedAlbum.genre }}</p>
@@ -214,6 +239,7 @@
       @shuffleQueue="shuffleQueue"
       @updateQueue="queue = $event"
       @updateCurrentQueueIndex="updateCurrentQueueIndex"
+      @restoreQueue="restoreQueue"
       class="rounded-player"
     />
   </v-container>
@@ -223,6 +249,7 @@
 import { useAuthStore } from '../stores/auth'
 import Player from '../components/Player.vue'
 import axios from 'axios'
+import { defineComponent } from 'vue'
 
 export default {
   name: 'Home',
@@ -249,6 +276,9 @@ export default {
     },
   },
   methods: {
+    toggleTheme() {
+      this.$vuetify.theme.global.name = this.$vuetify.theme.current.dark ? 'light' : 'dark'
+    },
     async fetchTracks() {
       try {
         const response = await fetch('http://localhost:5000/api/tracks')
@@ -326,6 +356,7 @@ export default {
       this.selectedTrack = track
       this.trackDialog = true
     },
+    
     async showAlbumDetails(album) {
       try {
         const response = await axios.get(`http://localhost:5000/api/albums/${album.album_id}/tracks`)
@@ -486,13 +517,19 @@ export default {
 </script>
 
 <style scoped>
-
+.logOutBtn {
+  background-color: #c20a0ac0;
+}
 .menu-toggle {
   z-index: 1001;
 }
 .menu-icon {
   width: 24px;
   height: 24px;
+}
+.toggle-theme{
+  border-radius: 20px !important;
+
 }
 .track-card, .album-card {
   position: relative;
@@ -518,9 +555,9 @@ export default {
 .buttn {
   width: 30px; 
   height: 30px;
-  background-color: transparent ; /* Прозрачный фон */
-  opacity: 0.7; /* Полная видимость при наведении */
-  transition: opacity 0.2s; /* Плавное изменение прозрачности */
+  background-color: transparent ;
+  opacity: 0.7; 
+  transition: opacity 0.2s;
   box-shadow: 0 4px 20px rgba(255, 255, 255, 0);
   /* background-color: #ffffff; */
 
@@ -528,8 +565,9 @@ export default {
 
 .buttn:hover {
   
-  background-color: #dbd9d994; /* Прозрачный фон */
-  opacity: 1; /* Лёгкая прозрачность для видимости */
+  background-color: #dbd9d994; 
+  opacity: 1;
+  
   
 
 }
@@ -556,12 +594,11 @@ export default {
 .rounded-title {
   border-radius: 12px;
   padding: 10px;
-  background-color: #ffffff;
 }
 
-.title {
+/* .title {
   color: #fdfdfd;
-}
+} */
 
 .dialog-cover {
   border-radius: 8px !important;

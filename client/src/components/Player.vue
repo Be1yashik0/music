@@ -197,7 +197,7 @@
 </template>
 
 <script>
-
+import { setCache, getCache } from '../utils/cache'
 export default {
   name: 'Player',
   props: {
@@ -254,9 +254,12 @@ export default {
     },
     queue(newQueue) {
       if (!this.shuffle) {
-        this.originalQueue = [...newQueue] // Обновляем исходную очередь при изменениях
+        this.originalQueue = [...newQueue]
       }
-    }
+    },
+    volume(newVal) {
+      setCache('playerVolume', newVal) // Сохраняем громкость в кэш
+    },
   },
   methods: {
     toggleExpanded() {
@@ -352,6 +355,14 @@ export default {
   },
   mounted() {
     this.$refs.audioPlayer.volume = this.volume
+    const cachedVolume = getCache('playerVolume')
+    if (cachedVolume !== null) {
+      this.volume = cachedVolume // Загружаем громкость из кэша
+      this.$refs.audioPlayer.volume = this.volume
+    } else {
+      this.$refs.audioPlayer.volume = this.volume // Значение по умолчанию
+    }
+  
   },
 }
 </script>

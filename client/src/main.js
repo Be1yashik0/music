@@ -13,6 +13,7 @@ import '@icon-park/vue-next/styles/index.css'
 const app = createApp(App)
 const pinia = createPinia()
 
+
 app.use(vuetify, {
   theme: {
     defaultTheme: 'dark', // Изначально тёмная тема

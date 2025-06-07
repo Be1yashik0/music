@@ -7,14 +7,16 @@ const path = require('path')
 const passport = require('passport')
 const GoogleStrategy = require('passport-google-oauth20').Strategy
 const YandexStrategy = require('passport-yandex').Strategy
-const swaggerUi = require('swagger-ui-express');
-const swaggerDocument = require('./swagger.json');
+const swaggerUi = require('swagger-ui-express')
+const swaggerDocument = require('./swagger.json')
 require('dotenv').config()
 
 const app = express()
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
 app.use(cors())
 app.use(express.json())
+
+// Настройка статических директорий
 app.use('/uploads/covers', express.static(path.join(__dirname, 'uploads/covers')))
 app.use('/uploads/audio', express.static(path.join(__dirname, 'uploads/audio')))
 app.use('/uploads/avatars', express.static(path.join(__dirname, 'uploads/avatars')))
@@ -24,37 +26,39 @@ app.use('/uploads', (req, res, next) => {
   next()
 })
 
-
 // Настройка Multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     if (file.fieldname === 'cover') {
-      cb(null, 'uploads/cover/')
+      cb(null, 'uploads/covers/')
+    } else if (file.fieldname === 'audio') {
       cb(null, 'uploads/audio/')
+    } else if (file.fieldname === 'avatar') {
+      cb(null, 'uploads/avatars/')
     }
   },
   filename: (req, file, cb) => {
-    cb(null, `${Date.now()}${path.extname(file.originalname)}`)
+    cb(null, `${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`)
   },
 })
-const upload = multer({ storage })
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
+const upload = multer({ storage, limits: { fileSize: 100 * 1024 * 1024 } })
 
 // Passport настройка
 app.use(passport.initialize())
 
-const sequelize = new Sequelize(process.env.DATABASE_URL, {
-  dialect: 'postgres',
-})
+const sequelize = new Sequelize(process.env.DATABASE_URL, { dialect: 'postgres' })
 
 sequelize.authenticate()
   .then(() => console.log('Database connected'))
   .catch(err => console.error('Database connection error:', err))
 
 const User = require('./models/User')
+const Track = require('./models/Track')
+const Album = require('./models/Album')
 
-
-
+sequelize.sync({ alter: true })
+  .then(() => console.log('Database and models synchronized'))
+  .catch(err => console.error('Database synchronization error:', err))
 
 // Middleware для проверки токена
 const authenticateToken = (req, res, next) => {
@@ -66,6 +70,19 @@ const authenticateToken = (req, res, next) => {
     req.user = user
     next()
   })
+}
+
+// Middleware для проверки прав администратора
+const isAdmin = async (req, res, next) => {
+  try {
+    const user = await User.findByPk(req.user.userId)
+    if (!user || !user.is_admin) {
+      return res.status(403).json({ message: 'Access denied: Admins only' })
+    }
+    next()
+  } catch (error) {
+    res.status(500).json({ message: 'Error checking admin status', error: error.message })
+  }
 }
 
 // Passport стратегии
@@ -126,8 +143,7 @@ app.get('/auth/yandex/callback', passport.authenticate('yandex', { session: fals
   res.redirect(`http://localhost:5173/login?token=${token}&userId=${userId}&username=${username}&email=${email}&avatar=${avatar}`)
 })
 
-
-
+// Профиль
 app.put('/api/auth/profile', authenticateToken, upload.single('avatar'), async (req, res) => {
   try {
     const { username, email } = req.body
@@ -153,7 +169,7 @@ app.get('/api/auth/verify', authenticateToken, async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' })
     }
-    res.json({ user: { id: user.user_id, username: user.username, email: user.email, avatar: user.avatar } })
+    res.json({ user: { id: user.user_id, username: user.username, email: user.email, avatar: user.avatar, is_admin: user.is_admin } })
   } catch (error) {
     res.status(500).json({ message: 'Verification failed', error: error.message })
   }
@@ -175,61 +191,41 @@ app.get('/api/auth/profile', authenticateToken, async (req, res) => {
   }
 })
 
-// треки
-
-const Track = require('./models/Track')
-const Album = require('./models/Album')
-
-// Настройка Multer для аудио и обложек
-const audioStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    if (file.fieldname === 'audio') {
-      cb(null, 'uploads/audio/')
-    } else if (file.fieldname === 'cover') {
-      cb(null, 'uploads/covers/')
-    }
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`)
-  },
-})
-const audioUpload = multer({ 
-  storage: audioStorage,
-  limits: { fileSize: 100 * 1024 * 1024 } // Лимит 100 МБ
-})
-
-app.use('/uploads/audio', express.static(path.join(__dirname, 'uploads/audio')))
-app.use('/uploads/covers', express.static(path.join(__dirname, 'Uploads/covers')))
-
-// Загрузка сингла
-app.post('/api/tracks/single', authenticateToken, audioUpload.fields([{ name: 'audio', maxCount: 1 }, { name: 'cover', maxCount: 1 }]), async (req, res) => {
+// Треки и альбомы
+app.post('/api/tracks/single', authenticateToken, upload.fields([{ name: 'audio', maxCount: 1 }, { name: 'cover', maxCount: 1 }]), async (req, res) => {
   try {
     const { title, artist, release_date, genre } = req.body
+    if (!req.files.audio || !req.files.audio.length) {
+      return res.status(400).json({ message: 'Audio file is required' })
+    }
     const track = await Track.create({
       title,
       artist,
       release_date,
       audio_url: `/uploads/audio/${req.files.audio[0].filename}`,
-      cover_url: req.files.cover ? `/uploads/covers/${req.files.cover[0].filename}` : null,
+      cover_url: req.files.cover && req.files.cover.length ? `/uploads/covers/${req.files.cover[0].filename}` : null,
       genre,
       user_id: req.user.userId,
     })
     res.status(201).json({ message: 'Single uploaded', track })
   } catch (error) {
+    console.error('Upload single error:', error.stack)
     res.status(400).json({ message: 'Single upload failed', error: error.message })
   }
 })
 
-// Загрузка альбома
-app.post('/api/albums', authenticateToken, audioUpload.fields([{ name: 'audio', maxCount: 10 }, { name: 'cover', maxCount: 1 }]), async (req, res) => {
+app.post('/api/albums', authenticateToken, upload.fields([{ name: 'audio', maxCount: 10 }, { name: 'cover', maxCount: 1 }]), async (req, res) => {
   try {
     const { title, artist, release_date, genre, tracks } = req.body
     const parsedTracks = JSON.parse(tracks)
+    if (!req.files.audio || req.files.audio.length !== parsedTracks.length) {
+      return res.status(400).json({ message: 'Number of audio files must match tracks array' })
+    }
     const album = await Album.create({
       title,
       artist,
       release_date,
-      cover_url: req.files.cover ? `/uploads/covers/${req.files.cover[0].filename}` : null,
+      cover_url: req.files.cover && req.files.cover.length ? `/uploads/covers/${req.files.cover[0].filename}` : null,
       genre,
       user_id: req.user.userId,
     })
@@ -239,7 +235,7 @@ app.post('/api/albums', authenticateToken, audioUpload.fields([{ name: 'audio', 
         artist,
         release_date,
         audio_url: `/uploads/audio/${req.files.audio[index].filename}`,
-        cover_url: req.files.cover ? `/uploads/covers/${req.files.cover[0].filename}` : null,
+        cover_url: req.files.cover && req.files.cover.length ? `/uploads/covers/${req.files.cover[0].filename}` : null,
         genre,
         album_id: album.album_id,
         user_id: req.user.userId,
@@ -248,11 +244,11 @@ app.post('/api/albums', authenticateToken, audioUpload.fields([{ name: 'audio', 
     await Promise.all(trackPromises)
     res.status(201).json({ message: 'Album uploaded', album })
   } catch (error) {
+    console.error('Upload album error:', error.stack)
     res.status(400).json({ message: 'Album upload failed', error: error.message })
   }
 })
 
-// Получение всех треков
 app.get('/api/tracks', async (req, res) => {
   try {
     const tracks = await Track.findAll()
@@ -264,7 +260,6 @@ app.get('/api/tracks', async (req, res) => {
   }
 })
 
-// Получение всех альбомов
 app.get('/api/albums', async (req, res) => {
   try {
     const albums = await Album.findAll({
@@ -284,7 +279,6 @@ app.get('/api/albums', async (req, res) => {
   }
 })
 
-// Получение треков альбома
 app.get('/api/albums/:album_id/tracks', async (req, res) => {
   try {
     const tracks = await Track.findAll({ where: { album_id: req.params.album_id } })
@@ -294,7 +288,6 @@ app.get('/api/albums/:album_id/tracks', async (req, res) => {
   }
 })
 
-// Увеличение счётчика прослушиваний
 app.post('/api/tracks/:track_id/listen', async (req, res) => {
   try {
     const track = await Track.findByPk(req.params.track_id)
@@ -307,6 +300,60 @@ app.post('/api/tracks/:track_id/listen', async (req, res) => {
   }
 })
 
+// Админские эндпоинты
+app.delete('/api/tracks/:track_id', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const track = await Track.findByPk(req.params.track_id)
+    if (!track) {
+      return res.status(404).json({ message: 'Track not found' })
+    }
+    await track.destroy()
+    res.json({ message: 'Track deleted successfully' })
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting track', error: error.message })
+  }
+})
+
+app.delete('/api/albums/:album_id', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const album = await Album.findByPk(req.params.album_id)
+    if (!album) {
+      return res.status(404).json({ message: 'Album not found' })
+    }
+    await Track.destroy({ where: { album_id: album.album_id } }) // Удаляем связанные треки
+    await album.destroy()
+    res.json({ message: 'Album deleted successfully' })
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting album', error: error.message })
+  }
+})
+
+app.get('/api/users', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const users = await User.findAll()
+    res.json(users)
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching users', error: error.message })
+  }
+})
+
+app.delete('/api/users/:user_id', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.params.user_id)
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+    if (user.is_admin) {
+      return res.status(403).json({ message: 'Cannot delete admin user' })
+    }
+    await Track.destroy({ where: { user_id: user.user_id } }) // Удаляем треки пользователя
+    await Album.destroy({ where: { user_id: user.user_id } }) // Удаляем альбомы пользователя
+    await user.destroy()
+    res.json({ message: 'User deleted successfully' })
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting user', error: error.message })
+  }
+})
 
 app.get('/', (req, res) => {
   res.send('Music Streaming API')
@@ -314,4 +361,3 @@ app.get('/', (req, res) => {
 
 const PORT = process.env.PORT || 5000
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`))
-

@@ -4,6 +4,7 @@ import Home from '../views/Home.vue'
 import Profile from '../views/Profile.vue'
 import Playlists from '../views/Playlists.vue' // Добавляем импорт
 import Search from '../views/Search.vue'
+import Admin from '../views/Admin.vue'
 
 const routes = [
   {
@@ -29,6 +30,12 @@ const routes = [
 
   { path: '/playlists', component: Playlists }, 
   { path: '/search', component: Search },
+
+   {
+    path: '/admin',
+    name: 'Admin',
+    component: Admin,
+  },
 
 ]
 

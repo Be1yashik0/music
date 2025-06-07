@@ -85,6 +85,11 @@
             Загрузить музыку
           </v-list-item-icon>
         </v-list-item>
+        <v-spacer></v-spacer>
+        <v-list-item to="/admin" v-if="authStore.user && authStore.user.is_admin">
+          <v-divider></v-divider>
+          <v-list-item-title>Администрирование</v-list-item-title>
+        </v-list-item>
       </v-list>
     </v-navigation-drawer>
 
@@ -250,6 +255,7 @@ import { useAuthStore } from '../stores/auth'
 import Player from '../components/Player.vue'
 import axios from 'axios'
 import { defineComponent } from 'vue'
+import { setCache, getCache } from '../utils/cache'
 
 export default {
   name: 'Home',
@@ -268,6 +274,7 @@ export default {
       isPlaying: false,
       queue: [],
       currentQueueIndex: -1,
+      
     }
   },
   computed: {
@@ -508,9 +515,55 @@ export default {
     
   },
   
+  watch: {
+  currentTrack(newVal) {
+    if (newVal) {
+      console.log('Caching currentTrack:', newVal)
+      setCache('currentTrack', newVal)
+    } else {
+      console.log('Clearing currentTrack cache')
+      clearCache('currentTrack')
+    }
+  },
+  queue(newVal) {
+    console.log('Caching queue:', newVal)
+    setCache('queue', newVal)
+  },
+  currentQueueIndex(newVal) {
+    console.log('Caching currentQueueIndex:', newVal)
+    setCache('currentQueueIndex', newVal)
+  },
+  theme(newVal) {
+    setCache('theme', newVal)
+    this.applyTheme(newVal)
+  },
+},
+
   async mounted() {
     await this.fetchTracks()
     await this.fetchAlbums()
+
+    const cachedTrack = getCache('currentTrack')
+    const cachedQueue = getCache('queue')
+    const cachedQueueIndex = getCache('currentQueueIndex')
+    const cachedTheme = getCache('theme')
+
+    if (cachedTrack) {
+      this.currentTrack = cachedTrack
+    }
+    if (cachedQueue) {
+      this.queue = cachedQueue
+    }
+    if (cachedQueueIndex !== null) {
+      this.currentQueueIndex = cachedQueueIndex
+    }
+    // if (cachedTheme) {
+    //   this.theme = cachedTheme
+    // } else {
+    //   this.theme = 'dark' // Значение по умолчанию
+    // }
+    // this.applyTheme(this.theme)
+  
   },
 
 }

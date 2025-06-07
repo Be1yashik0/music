@@ -55,6 +55,7 @@ sequelize.authenticate()
 const User = require('./models/User')
 const Track = require('./models/Track')
 const Album = require('./models/Album')
+const Favorite = require('./models/Favorites')
 
 sequelize.sync({ alter: true })
   .then(() => console.log('Database and models synchronized'))
@@ -352,6 +353,55 @@ app.delete('/api/users/:user_id', authenticateToken, isAdmin, async (req, res) =
     res.json({ message: 'User deleted successfully' })
   } catch (error) {
     res.status(500).json({ message: 'Error deleting user', error: error.message })
+  }
+})
+
+// Избранное
+app.post('/api/favorites/track/:track_id', authenticateToken, async (req, res) => {
+  try {
+    const { track_id } = req.params
+    const user_id = req.user.userId
+    const existing = await Favorite.findOne({ where: { user_id, track_id } })
+    if (existing) {
+      return res.status(400).json({ message: 'Track already in favorites' })
+    }
+    await Favorite.create({ user_id, track_id })
+    res.json({ message: 'Track added to favorites' })
+  } catch (error) {
+    res.status(500).json({ message: 'Error adding track to favorites', error: error.message })
+  }
+})
+
+app.post('/api/favorites/album/:album_id', authenticateToken, async (req, res) => {
+  try {
+    const { album_id } = req.params
+    const user_id = req.user.userId
+    const existing = await Favorite.findOne({ where: { user_id, album_id } })
+    if (existing) {
+      return res.status(400).json({ message: 'Album already in favorites' })
+    }
+    await Favorite.create({ user_id, album_id })
+    res.json({ message: 'Album added to favorites' })
+  } catch (error) {
+    res.status(500).json({ message: 'Error adding album to favorites', error: error.message })
+  }
+})
+
+app.get('/api/favorites', authenticateToken, async (req, res) => {
+  try {
+    const user_id = req.user.userId
+    const favorites = await Favorite.findAll({
+      where: { user_id },
+      include: [
+        { model: Track, as: 'Track' },
+        { model: Album, as: 'Album' },
+      ],
+    })
+    const tracks = favorites.filter(f => f.track_id).map(f => f.Track)
+    const albums = favorites.filter(f => f.album_id).map(f => f.Album)
+    res.json({ tracks, albums })
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching favorites', error: error.message })
   }
 })
 

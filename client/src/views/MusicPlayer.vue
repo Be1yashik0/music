@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
     <div class="music-player-page">
       <h1>Music Player</h1>
       <Player />
@@ -20,4 +20,4 @@
   .music-player-page {
     padding: 20px;
   }
-  </style>
+  </style> -->

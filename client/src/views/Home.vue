@@ -22,10 +22,10 @@
       ></v-text-field> 
       <v-list-item @click="toggleTheme" class="toggle-theme">
         <v-list-item-icon>
-          <Moon  v-if="$vuetify.theme.current.dark" :size="24" class="menu-icon" />
+          <Moon  v-if="$vuetify.theme.current.dark" :size="26" class="menu-icon" />
           <SunOne v-else :size="24" class="menu-icon" />
         </v-list-item-icon>
-        <v-list-item-title>{{ $vuetify.theme.current.dark ?  'Тёмная тема' : 'Светлая тема' }}</v-list-item-title>
+        <!-- <v-list-item-title>{{ $vuetify.theme.current.dark ?  'Тёмная тема' : 'Светлая тема' }}</v-list-item-title> -->
       </v-list-item>
       <v-menu v-if="authStore.user" offset-y>
         <template v-slot:activator="{ props }">
@@ -73,10 +73,10 @@
           </v-list-item-icon>
         </v-list-item>
         
-        <v-list-item to="/playlists" v-if="authStore.user">
+        <v-list-item to="/favorites" v-if="authStore.user">
           <v-list-item-icon>
             <!-- <img src="@/assets/icons/list-music.svg" alt="list-music" class="menu-icon" style="width: 24px; height: 24px;" /> -->
-            Мои плейлисты
+            Избранное
           </v-list-item-icon>
         </v-list-item>
         <v-list-item to="/upload" v-if="authStore.user">
@@ -135,7 +135,7 @@
     </v-main>
 
     <v-dialog v-model="trackDialog" max-width="500" class="rounded-dialog track-dialog" >
-      <v-card v-if="selectedTrack" class="rounded-card">
+      <v-card v-if="selectedTrack" class="rounded-card" >
         <v-img
           :src="`http://localhost:5000${selectedTrack.cover_url || '/uploads/covers/default.jpg'}`"
           height="400"
@@ -186,7 +186,7 @@
             <v-btn icon @click="addAlbumToQueue(selectedAlbum)" class="rounded-btn buttn">
               <fold-up-one theme="outline" size="30" />
             </v-btn>
-            <v-btn icon @click="addToPlaylist(selectedAlbum)" class="rounded-btn buttn">
+            <v-btn icon @click="addToFavorites(selectedAlbum,true)" class="rounded-btn buttn">
               <like theme="outline" size="30" />
             </v-btn>
           </div>
@@ -274,6 +274,7 @@ export default {
       isPlaying: false,
       queue: [],
       currentQueueIndex: -1,
+      currentTime: 0,
       
     }
   },
@@ -309,15 +310,23 @@ export default {
         console.error('Failed to fetch tracks:', error)
       }
     },
-    async addToFavorites(track) {
+    async addToFavorites(item, isAlbum = false) {
+      if (!item || (isAlbum && !item.album_id) || (!isAlbum && !item.track_id)) {
+        this.$root.showSnackbar('Ошибка: неверные данные элемента', 'error')
+        return
+      }
       try {
-        await axios.post('http://localhost:5000/api/favorite/tracks', { track_id: track.track_id }, {
+        const endpoint = isAlbum
+          ? `/api/favorites/album/${item.album_id}`
+          : `/api/favorites/track/${item.track_id}`
+        await axios.post(`http://localhost:5000${endpoint}`, {}, {
           headers: { Authorization: `Bearer ${this.authStore.token}` },
         })
-        this.$root.showSnackbar('Трек добавлен в избранное')
+        this.$root.showSnackbar(`${isAlbum ? 'Альбом' : 'Трек'} "${item.title}" добавлен в избранное`)
       } catch (error) {
-        this.$root.showSnackbar(`Ошибка: ${error.response?.data?.error || error.message}`, 'error')
+        this.$root.showSnackbar(`Ошибка добавления в избранное: ${error.response?.data?.message || error.message}`, 'error')
       }
+    
     },
     async addToPlaylist(album) {
       try {
@@ -411,19 +420,27 @@ export default {
       })
     },
     addToQueue(track) {
-      this.queue.push(track)
+      this.queue = [...this.queue, track] // Создаём новый массив для реактивности
       this.$root.showSnackbar(`Трек "${track.title}" добавлен в очередь`)
     },
     addAlbumToQueue(album) {
-      this.queue.push(...album.tracks)
+      this.queue = [...this.queue, ...album.tracks] // Создаём новый массив
       this.$root.showSnackbar(`Альбом "${album.title}" добавлен в очередь`)
     },
     playNext(track) {
-      this.queue.splice(this.currentQueueIndex + 1, 0, track)
+      this.queue = [
+        ...this.queue.slice(0, this.currentQueueIndex + 1),
+        track,
+        ...this.queue.slice(this.currentQueueIndex + 1),
+      ]
       this.$root.showSnackbar(`Трек "${track.title}" добавлен для воспроизведения следующим`)
     },
     playAlbumNext(album) {
-      this.queue.splice(this.currentQueueIndex + 1, 0, ...album.tracks)
+      this.queue = [
+        ...this.queue.slice(0, this.currentQueueIndex + 1),
+        ...album.tracks,
+        ...this.queue.slice(this.currentQueueIndex + 1),
+      ]
       this.$root.showSnackbar(`Альбом "${album.title}" добавлен для воспроизведения следующим`)
     },
     shuffleQueue(currentIndex) {
@@ -505,11 +522,16 @@ export default {
       this.isPlaying = true
     },
     removeFromQueue(index) {
-      this.queue.splice(index, 1)
+      const newQueue = this.queue.filter((_, i) => i !== index)
+      this.queue = newQueue // Явное создание нового массива
+      console.log('Queue after removal:', newQueue)
+      setCache('queue', newQueue) // Явно обновляем кэш
       if (this.queue.length === 0) {
         this.currentTrack = null
         this.currentQueueIndex = -1
         this.isPlaying = false
+        setCache('currentTrack', null)
+        setCache('currentQueueIndex', -1)
       }
     },
     
@@ -537,6 +559,11 @@ export default {
     setCache('theme', newVal)
     this.applyTheme(newVal)
   },
+  currentTime(newVal) {
+    console.log('Caching currentTime:', newVal)
+    setCache('currentTime', newVal)
+  },
+  
 },
 
   async mounted() {
@@ -547,6 +574,7 @@ export default {
     const cachedQueue = getCache('queue')
     const cachedQueueIndex = getCache('currentQueueIndex')
     const cachedTheme = getCache('theme')
+    const cachedTime = getCache('currentTime') 
 
     if (cachedTrack) {
       this.currentTrack = cachedTrack
@@ -556,6 +584,9 @@ export default {
     }
     if (cachedQueueIndex !== null) {
       this.currentQueueIndex = cachedQueueIndex
+    }
+    if (cachedTime !== null) {
+    this.currentTime = cachedTime
     }
     // if (cachedTheme) {
     //   this.theme = cachedTheme

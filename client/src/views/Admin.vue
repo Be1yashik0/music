@@ -56,9 +56,9 @@
             Главная
           </v-list-item-icon>
         </v-list-item>
-        <v-list-item to="/playlists" v-if="authStore.user">
+        <v-list-item to="/favorites" v-if="authStore.user">
           <v-list-item-icon>
-            Мои плейлисты
+            Избранное
           </v-list-item-icon>
         </v-list-item>
         <v-list-item to="/upload" v-if="authStore.user">
@@ -169,7 +169,7 @@ export default {
   data() {
     return {
       drawer: false,
-      activeTab: 'tracks', // Инициализируем с первым значением вкладки
+      activeTab: 'tracks', 
       tracks: [],
       albums: [],
       users: [],
@@ -182,7 +182,7 @@ export default {
   },
   watch: {
     activeTab(newTab) {
-      console.log('Tab changed to:', newTab) // Отладка переключения вкладок
+      console.log('Tab changed to:', newTab) 
     },
   },
   async mounted() {
@@ -328,6 +328,7 @@ export default {
 }
 .rounded-drawer {
   margin: 12px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
   border-radius: 10px !important;
 }
 .rounded-title {

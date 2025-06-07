@@ -387,6 +387,36 @@ app.post('/api/favorites/album/:album_id', authenticateToken, async (req, res) =
   }
 })
 
+app.delete('/api/favorites/track/:track_id', authenticateToken, async (req, res) => {
+  try {
+    const { track_id } = req.params
+    const user_id = req.user.userId
+    const favorite = await Favorite.findOne({ where: { user_id, track_id } })
+    if (!favorite) {
+      return res.status(404).json({ message: 'Track not in favorites' })
+    }
+    await favorite.destroy()
+    res.json({ message: 'Track removed from favorites' })
+  } catch (error) {
+    res.status(500).json({ message: 'Error removing track from favorites', error: error.message })
+  }
+})
+
+app.delete('/api/favorites/album/:album_id', authenticateToken, async (req, res) => {
+  try {
+    const { album_id } = req.params
+    const user_id = req.user.userId
+    const favorite = await Favorite.findOne({ where: { user_id, album_id } })
+    if (!favorite) {
+      return res.status(404).json({ message: 'Album not in favorites' })
+    }
+    await favorite.destroy()
+    res.json({ message: 'Album removed from favorites' })
+  } catch (error) {
+    res.status(500).json({ message: 'Error removing album from favorites', error: error.message })
+  }
+})
+
 app.get('/api/favorites', authenticateToken, async (req, res) => {
   try {
     const user_id = req.user.userId

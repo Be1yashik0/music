@@ -22,10 +22,9 @@
       ></v-text-field> 
       <v-list-item @click="toggleTheme" class="toggle-theme">
         <v-list-item-icon>
-          <Moon  v-if="$vuetify.theme.current.dark" :size="26" class="menu-icon" />
+          <Moon v-if="$vuetify.theme.current.dark" :size="26" class="menu-icon" />
           <SunOne v-else :size="24" class="menu-icon" />
         </v-list-item-icon>
-        <!-- <v-list-item-title>{{ $vuetify.theme.current.dark ?  'Тёмная тема' : 'Светлая тема' }}</v-list-item-title> -->
       </v-list-item>
       <v-menu v-if="authStore.user" offset-y>
         <template v-slot:activator="{ props }">
@@ -46,14 +45,10 @@
           </v-card-text>
           <v-divider></v-divider>
           <v-list>
-           
             <v-list-item to="/profile" v-if="authStore.user">
-              <!-- <v-list-item-icon>
-                <img src="@/assets/icons/profile.svg" alt="profile" class="menu-icon" style="width: 24px; height: 24px;" />
-              </v-list-item-icon> -->
               <v-list-item-title>Профиль</v-list-item-title>
             </v-list-item>
-            <v-list-item @click="authStore.logout" class = "logOutBtn">
+            <v-list-item @click="authStore.logout" class="logOutBtn">
               <v-list-item-title>Выйти</v-list-item-title>
             </v-list-item>
           </v-list>
@@ -66,22 +61,16 @@
       <v-list>
         <v-list-item to="/" exact>
           <v-list-item-icon>
-            
-            <!-- <img src="@/assets/icons/home.svg" alt="home" class="menu-icon" style="width: 24px; height: 24px;" /> -->
-            <!-- <home theme="outline" size="24" fill="#000000"/> -->
             Главная
           </v-list-item-icon>
         </v-list-item>
-        
         <v-list-item to="/favorites" v-if="authStore.user">
           <v-list-item-icon>
-            <!-- <img src="@/assets/icons/list-music.svg" alt="list-music" class="menu-icon" style="width: 24px; height: 24px;" /> -->
             Избранное
           </v-list-item-icon>
         </v-list-item>
         <v-list-item to="/upload" v-if="authStore.user">
           <v-list-item-icon>
-            <!-- <img src="@/assets/icons/download.svg" alt="download" class="menu-icon" style="width: 24px; height: 24px;" /> -->
             Загрузить музыку
           </v-list-item-icon>
         </v-list-item>
@@ -95,47 +84,59 @@
 
     <v-main>
       <v-container fluid>
-        <h2 class="mb-4 rounded-title">Новые треки</h2>
-        <v-row>
-          <v-col v-for="track in tracks" :key="track.track_id" cols="12" sm="6" md="5" lg="2">
-            <v-card
-              class="track-card rounded-card"
-              @click="showTrackDetails(track)"
-            >
-              <v-img
-                :src="`http://localhost:5000${track.cover_url || '/uploads/covers/default.jpg'}`"
-                height="150"
-                @error="console.error('Failed to load cover:', `http://localhost:5000${track.cover_url || 'default'}`)"
-              ></v-img>
-              <v-card-title class="text-subtitle-1">{{ track.title }}</v-card-title>
-              <v-card-subtitle class="text-caption" @click.stop="goToArtist(track.artist)">{{ track.artist }}</v-card-subtitle>
-            </v-card>
-          </v-col>
-        </v-row>
+        <h2 class="mb-4 rounded-title">Музыка</h2>
+        <v-tabs v-model="activeTab" background-color="primary" dark class="rounded-tabs">
+          <v-tab value="tracks">Треки</v-tab>
+          <v-tab value="albums">Альбомы</v-tab>
+        </v-tabs>
 
-        <h2 class="mb-4 mt-8 rounded-title">Новые альбомы</h2>
-        <v-row>
-          <v-col v-for="album in albums" :key="album.album_id" cols="12" sm="6" md="4" lg="2">
-            <v-card
-              class="album-card rounded-card"
-              @click="showAlbumDetails(album)"
-            >
-              <v-img
-                :src="`http://localhost:5000${album.cover_url || '/uploads/covers/default.jpg'}`"
-                height="150"
-                @error="console.error('Failed to load album cover:', `http://localhost:5000${album.cover_url || 'default'}`)"
-              ></v-img>
-              <v-card-title class="text-subtitle-1">{{ album.title }}</v-card-title>
-              <v-card-subtitle class="text-caption" @click.stop="goToArtist(album.artist)">{{ album.artist }}</v-card-subtitle>
-              <v-card-text class="text-caption">колличество треков: {{ album.track_count }}</v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
+        <v-window v-model="activeTab" class="mt-4">
+          <!-- Вкладка треков -->
+          <v-window-item value="tracks">
+            <v-row>
+              <v-col v-for="track in tracks" :key="track.track_id" cols="12" sm="6" md="5" lg="2">
+                <v-card
+                  class="track-card rounded-card"
+                  @click="showTrackDetails(track)"
+                >
+                  <v-img
+                    :src="`http://localhost:5000${track.cover_url || '/uploads/covers/default.jpg'}`"
+                    height="150"
+                    @error="console.error('Failed to load cover:', `http://localhost:5000${track.cover_url || 'default'}`)"
+                  ></v-img>
+                  <v-card-title class="text-subtitle-1">{{ track.title }}</v-card-title>
+                  <v-card-subtitle class="text-caption" @click.stop="goToArtist(track.artist)">{{ track.artist }}</v-card-subtitle>
+                </v-card>
+              </v-col>
+            </v-row>
+          </v-window-item>
+
+          <!-- Вкладка альбомов -->
+          <v-window-item value="albums">
+            <v-row>
+              <v-col v-for="album in albums" :key="album.album_id" cols="12" sm="6" md="4" lg="2">
+                <v-card
+                  class="album-card rounded-card"
+                  @click="showAlbumDetails(album)"
+                >
+                  <v-img
+                    :src="`http://localhost:5000${album.cover_url || '/uploads/covers/default.jpg'}`"
+                    height="150"
+                    @error="console.error('Failed to load album cover:', `http://localhost:5000${album.cover_url || 'default'}`)"
+                  ></v-img>
+                  <v-card-title class="text-subtitle-1">{{ album.title }}</v-card-title>
+                  <v-card-subtitle class="text-caption" @click.stop="goToArtist(album.artist)">{{ album.artist }}</v-card-subtitle>
+                  <v-card-text class="text-caption">колличество треков: {{ album.track_count }}</v-card-text>
+                </v-card>
+              </v-col>
+            </v-row>
+          </v-window-item>
+        </v-window>
       </v-container>
     </v-main>
 
-    <v-dialog v-model="trackDialog" max-width="500" class="rounded-dialog track-dialog" >
-      <v-card v-if="selectedTrack" class="rounded-card" >
+    <v-dialog v-model="trackDialog" max-width="500" class="rounded-dialog track-dialog">
+      <v-card v-if="selectedTrack" class="rounded-card">
         <v-img
           :src="`http://localhost:5000${selectedTrack.cover_url || '/uploads/covers/default.jpg'}`"
           height="400"
@@ -144,7 +145,7 @@
         <v-card-title>{{ selectedTrack.title }}</v-card-title>
         <v-card-subtitle>{{ selectedTrack.artist }}</v-card-subtitle>
         <v-card-text>
-          <div class="d-flex align-center">
+          <div class="d-flex align-center album-controls ">
             <v-btn icon @click="playTrack(selectedTrack)" class="rounded-btn buttn">
               <play-one theme="outline" size="24" />
             </v-btn>
@@ -154,13 +155,17 @@
             <v-btn icon @click="addToQueue(selectedTrack)" class="rounded-btn buttn">
               <fold-up-one theme="outline" size="24" />
             </v-btn>
-            <v-btn icon @click="addToFavorites(selectedTrack)" class="rounded-btn buttn">
+            <!-- <v-btn icon @click="addToFavorites(selectedTrack)" class="rounded-btn buttn">
               <like theme="outline" size="24" />
+            </v-btn> -->
+            <v-btn icon @click="toggleFavorite(selectedTrack)" class="rounded-btn buttn">
+              <like v-if="!isInFavorites(selectedTrack)" theme="outline" size="24"  />
+              <like v-else  theme="two-tone" size="24" :fill="[,'#ff0002']" />
             </v-btn>
           </div>
           <div class="mt-4">
             <p>Дата выпуска: {{ formatDate(selectedTrack.release_date) }}</p>
-            <p>Прослушиваний: {{ selectedTrack.listens }}</p>
+            <!-- <p>Прослушиваний: {{ selectedTrack.listens }}</p> -->
             <p>Жанр: {{ selectedTrack.genre }}</p>
           </div>
         </v-card-text>
@@ -176,20 +181,21 @@
         ></v-img>
         <v-card-title>{{ selectedAlbum.title }}</v-card-title>
         <v-card-subtitle>{{ selectedAlbum.artist }}</v-card-subtitle>
-        <div class="d-flex align-center">
-            <v-btn icon @click="playAlbum(selectedAlbum)" class="rounded-btn buttn">
-              <play-one theme="outline" size="32" />
-            </v-btn>
-            <v-btn icon @click="playAlbumNext(selectedAlbum)" class="rounded-btn buttn">
-              <to-bottom-one theme="outline" size="32" />
-            </v-btn>
-            <v-btn icon @click="addAlbumToQueue(selectedAlbum)" class="rounded-btn buttn">
-              <fold-up-one theme="outline" size="30" />
-            </v-btn>
-            <v-btn icon @click="addToFavorites(selectedAlbum,true)" class="rounded-btn buttn">
-              <like theme="outline" size="30" />
-            </v-btn>
-          </div>
+        <div class="d-flex align-center album-controls mb-4">
+          <v-btn icon @click="playAlbum(selectedAlbum)" class="rounded-btn buttn mx-2">
+            <play-one theme="outline" size="32" />
+          </v-btn>
+          <v-btn icon @click="playAlbumNext(selectedAlbum)" class="rounded-btn buttn mx-2">
+            <to-bottom-one theme="outline" size="32" />
+          </v-btn>
+          <v-btn icon @click="addAlbumToQueue(selectedAlbum)" class="rounded-btn buttn mx-2">
+            <fold-up-one theme="outline" size="30" />
+          </v-btn>
+          <v-btn icon @click="toggleFavorite(selectedAlbum, true)" class="rounded-btn buttn mx-2">
+            <like v-if="!isInFavorites(selectedAlbum, true)" theme="outline" size="24"  />
+            <like v-else  theme="two-tone" size="24" :fill="[,'#ff0002']" />
+          </v-btn>          
+        </div>
         <v-card-text>
           <v-list>
             <v-list-item
@@ -197,32 +203,31 @@
               :key="track.track_id"
               @mouseenter="track.hovered = true"
               @mouseleave="track.hovered = false"
+              @click="playAlbum(selectedAlbum, track)"
             >
-            <div class="d-flex align-center justify-space-between w-100">
-              <v-list-item-title>{{ track.title }}</v-list-item-title>
-              <div class="action-buttons">
-                <v-btn icon @click="playAlbum(selectedAlbum, track)" class="rounded-btn buttn">
-                  <play-one theme="outline" size="24" />
-                </v-btn>
-                <v-btn icon @click="addToQueue(track)" class="rounded-btn buttn">
-                  <fold-up-one theme="outline" size="24" />
-
-                </v-btn>
-                <v-btn icon @click="playNext(track)" class="rounded-btn buttn">
-                  <to-bottom-one theme="outline" size="24" />
-                </v-btn>
-                <v-btn icon @click="addToFavorites(track)" class="rounded-btn buttn">
-                  <like theme="outline" size="24" />
-                </v-btn>
+              <div class="d-flex align-center justify-space-between w-100 track-item">
+                <v-list-item-title>{{ track.title }}</v-list-item-title>
+                <div class="action-buttons" :class="{ 'visible': track.hovered }">
+                  <!-- <v-btn icon @click="playAlbum(selectedAlbum, track)" class="rounded-btn buttn">
+                    <play-one theme="outline" size="24" />
+                  </v-btn> -->
+                  <v-btn icon @click="addToQueue(track)" class="rounded-btn buttn">
+                    <fold-up-one theme="outline" size="24" />
+                  </v-btn>
+                  <v-btn icon @click="playNext(track)" class="rounded-btn buttn">
+                    <to-bottom-one theme="outline" size="24" />
+                  </v-btn>
+                  <v-btn icon @click="toggleFavorite(track)" class="rounded-btn buttn">
+                    <like v-if="!isInFavorites(track)" theme="outline" size="24" />
+                    <like v-else theme="two-tone" size="24" :fill="[,'#ff0002']" />
+                  </v-btn>
+                </div>
               </div>
-            </div>
             </v-list-item>
           </v-list>
           <div class="mt-4">
-
-
             <p>Дата выпуска: {{ formatDate(selectedAlbum.release_date) }}</p>
-            <p>Прослушиваний: {{ selectedAlbum.listens }}</p>
+            <!-- <p>Прослушиваний: {{ selectedAlbum.listens }}</p> -->
             <p>Жанр: {{ selectedAlbum.genre }}</p>
           </div>
         </v-card-text>
@@ -275,7 +280,7 @@ export default {
       queue: [],
       currentQueueIndex: -1,
       currentTime: 0,
-      
+      activeTab: 'tracks', 
     }
   },
   computed: {
@@ -284,6 +289,7 @@ export default {
     },
   },
   methods: {
+    
     toggleTheme() {
       this.$vuetify.theme.global.name = this.$vuetify.theme.current.dark ? 'light' : 'dark'
     },
@@ -310,23 +316,30 @@ export default {
         console.error('Failed to fetch tracks:', error)
       }
     },
-    async addToFavorites(item, isAlbum = false) {
-      if (!item || (isAlbum && !item.album_id) || (!isAlbum && !item.track_id)) {
-        this.$root.showSnackbar('Ошибка: неверные данные элемента', 'error')
-        return
+    isInFavorites(item, isAlbum = false) {
+      if (isAlbum) {
+        return this.favoriteAlbums.some(a => a.album_id === item.album_id)
       }
+      return this.favoriteTracks.some(t => t.track_id === item.track_id)
+    },
+    async toggleFavorite(item, isAlbum = false) {
       try {
-        const endpoint = isAlbum
-          ? `/api/favorites/album/${item.album_id}`
-          : `/api/favorites/track/${item.track_id}`
-        await axios.post(`http://localhost:5000${endpoint}`, {}, {
-          headers: { Authorization: `Bearer ${this.authStore.token}` },
-        })
-        this.$root.showSnackbar(`${isAlbum ? 'Альбом' : 'Трек'} "${item.title}" добавлен в избранное`)
+        const endpoint = isAlbum ? `/api/favorites/album/${item.album_id}` : `/api/favorites/track/${item.track_id}`
+        if (this.isInFavorites(item, isAlbum)) {
+          await axios.delete(`http://localhost:5000${endpoint}`, {
+            headers: { Authorization: `Bearer ${this.authStore.token}` },
+          })
+          this.$root.showSnackbar(`${isAlbum ? 'Альбом' : 'Трек'} "${item.title}" удалён из избранного`)
+        } else {
+          await axios.post(`http://localhost:5000${endpoint}`, {}, {
+            headers: { Authorization: `Bearer ${this.authStore.token}` },
+          })
+          this.$root.showSnackbar(`${isAlbum ? 'Альбом' : 'Трек'} "${item.title}" добавлен в избранное`)
+        }
+        await this.fetchFavorites()
       } catch (error) {
-        this.$root.showSnackbar(`Ошибка добавления в избранное: ${error.response?.data?.message || error.message}`, 'error')
+        this.$root.showSnackbar(`Ошибка: ${error.response?.data?.message || error.message}`, 'error')
       }
-    
     },
     async addToPlaylist(album) {
       try {
@@ -346,6 +359,17 @@ export default {
         this.albums = albums
       } catch (error) {
         console.error('Error fetching albums:', error)
+      }
+    },
+    async fetchFavorites() {
+      try {
+        const response = await axios.get('http://localhost:5000/api/favorites', {
+          headers: { Authorization: `Bearer ${this.authStore.token}` },
+        })
+        this.favoriteTracks = response.data.tracks
+        this.favoriteAlbums = response.data.albums
+      } catch (error) {
+        this.$root.showSnackbar(`Ошибка загрузки избранного: ${error.response?.data?.message || error.message}`, 'error')
       }
     },
     goToArtist(artist) {
@@ -372,11 +396,10 @@ export default {
       this.selectedTrack = track
       this.trackDialog = true
     },
-    
     async showAlbumDetails(album) {
       try {
         const response = await axios.get(`http://localhost:5000/api/albums/${album.album_id}/tracks`)
-        this.selectedAlbum = { ...album, tracks: response.data }
+        this.selectedAlbum = { ...album, tracks: response.data.map(track => ({ ...track, hovered: false })) }
         this.albumDialog = true
       } catch (error) {
         console.error('Error fetching album tracks:', error)
@@ -420,11 +443,11 @@ export default {
       })
     },
     addToQueue(track) {
-      this.queue = [...this.queue, track] // Создаём новый массив для реактивности
+      this.queue = [...this.queue, track]
       this.$root.showSnackbar(`Трек "${track.title}" добавлен в очередь`)
     },
     addAlbumToQueue(album) {
-      this.queue = [...this.queue, ...album.tracks] // Создаём новый массив
+      this.queue = [...this.queue, ...album.tracks]
       this.$root.showSnackbar(`Альбом "${album.title}" добавлен в очередь`)
     },
     playNext(track) {
@@ -456,10 +479,7 @@ export default {
       this.isPlaying = true
     },
     playNextTrack() {
-      if (this.shuffle && this.queue.length > 1) {
-        const nextIndex = Math.floor(Math.random() * this.queue.length)
-        this.currentQueueIndex = nextIndex
-      } else if (this.currentQueueIndex < this.queue.length - 1) {
+      if (this.currentQueueIndex < this.queue.length - 1) {
         this.currentQueueIndex++
       } else {
         this.currentQueueIndex = 0 // Повтор очереди
@@ -470,37 +490,16 @@ export default {
     playPrevTrack() {
       if (this.currentQueueIndex > 0) {
         this.currentQueueIndex--
-      } else if (this.repeatMode === 'queue') {
+      } else if (this.queue.length > 0) {
         this.currentQueueIndex = this.queue.length - 1
       }
       this.currentTrack = this.queue[this.currentQueueIndex]
       this.isPlaying = true
-      },
-      togglePlay() {
-        this.isPlaying = !this.isPlaying
+    },
+    togglePlay() {
+      this.isPlaying = !this.isPlaying
     },
     onTrackEnd() {
-      // if (this.shuffle && this.queue.length > 1) {
-      //   const nextIndex = Math.floor(Math.random() * this.queue.length)
-      //   this.currentQueueIndex = nextIndex
-      // } else if (this.currentQueueIndex < this.queue.length - 1) {
-      //   this.currentQueueIndex++
-      // } else if (this.repeatMode === 'queue') {
-      //   this.currentQueueIndex = 0
-      // } else if (this.repeatMode === 'single') {
-      //   // Ничего не делаем, т.к. Player сам перезапустит трек
-      // } else {
-      //   this.isPlaying = false
-      //   this.currentTrack = null
-      //   this.currentQueueIndex = -1
-      //   this.queue = []
-      // }
-      // if (this.currentQueueIndex !== -1) {
-      //   this.currentTrack = this.queue[this.currentQueueIndex]
-      //   this.isPlaying = true
-      // }
-      
-      
       if (this.currentQueueIndex < this.queue.length - 1) {
         this.currentQueueIndex++
         this.currentTrack = this.queue[this.currentQueueIndex]
@@ -510,8 +509,6 @@ export default {
         this.currentTrack = this.queue[this.currentQueueIndex]
         this.isPlaying = true
       }
-  
-    
     },
     formatDate(date) {
       return new Date(date).toLocaleDateString()
@@ -523,9 +520,8 @@ export default {
     },
     removeFromQueue(index) {
       const newQueue = this.queue.filter((_, i) => i !== index)
-      this.queue = newQueue // Явное создание нового массива
-      console.log('Queue after removal:', newQueue)
-      setCache('queue', newQueue) // Явно обновляем кэш
+      this.queue = newQueue
+      setCache('queue', newQueue)
       if (this.queue.length === 0) {
         this.currentTrack = null
         this.currentQueueIndex = -1
@@ -534,47 +530,39 @@ export default {
         setCache('currentQueueIndex', -1)
       }
     },
-    
   },
-  
   watch: {
-  currentTrack(newVal) {
-    if (newVal) {
-      console.log('Caching currentTrack:', newVal)
-      setCache('currentTrack', newVal)
-    } else {
-      console.log('Clearing currentTrack cache')
-      clearCache('currentTrack')
-    }
+    currentTrack(newVal) {
+      if (newVal) {
+        console.log('Caching currentTrack:', newVal)
+        setCache('currentTrack', newVal)
+      } else {
+        console.log('Clearing currentTrack cache')
+        setCache('currentTrack', null)
+      }
+    },
+    queue(newVal) {
+      console.log('Caching queue:', newVal)
+      setCache('queue', newVal)
+    },
+    currentQueueIndex(newVal) {
+      console.log('Caching currentQueueIndex:', newVal)
+      setCache('currentQueueIndex', newVal)
+    },
+    currentTime(newVal) {
+      console.log('Caching currentTime:', newVal)
+      setCache('currentTime', newVal)
+    },
   },
-  queue(newVal) {
-    console.log('Caching queue:', newVal)
-    setCache('queue', newVal)
-  },
-  currentQueueIndex(newVal) {
-    console.log('Caching currentQueueIndex:', newVal)
-    setCache('currentQueueIndex', newVal)
-  },
-  theme(newVal) {
-    setCache('theme', newVal)
-    this.applyTheme(newVal)
-  },
-  currentTime(newVal) {
-    console.log('Caching currentTime:', newVal)
-    setCache('currentTime', newVal)
-  },
-  
-},
-
   async mounted() {
     await this.fetchTracks()
     await this.fetchAlbums()
+    await this.fetchFavorites()
 
     const cachedTrack = getCache('currentTrack')
     const cachedQueue = getCache('queue')
     const cachedQueueIndex = getCache('currentQueueIndex')
-    const cachedTheme = getCache('theme')
-    const cachedTime = getCache('currentTime') 
+    const cachedTime = getCache('currentTime')
 
     if (cachedTrack) {
       this.currentTrack = cachedTrack
@@ -586,21 +574,28 @@ export default {
       this.currentQueueIndex = cachedQueueIndex
     }
     if (cachedTime !== null) {
-    this.currentTime = cachedTime
+      this.currentTime = cachedTime
     }
-    // if (cachedTheme) {
-    //   this.theme = cachedTheme
-    // } else {
-    //   this.theme = 'dark' // Значение по умолчанию
-    // }
-    // this.applyTheme(this.theme)
-  
   },
-
 }
 </script>
 
 <style scoped>
+.album-controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px; /* Расстояние между кнопками */
+}
+.track-item .action-buttons {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  display: flex;
+  gap: 5px;
+}
+
+.track-item .action-buttons.visible {
+  opacity: 1;
+}
 .logOutBtn {
   background-color: #c20a0ac0;
 }
@@ -611,9 +606,8 @@ export default {
   width: 24px;
   height: 24px;
 }
-.toggle-theme{
+.toggle-theme {
   border-radius: 20px !important;
-
 }
 .track-card, .album-card {
   position: relative;
@@ -622,40 +616,27 @@ export default {
 .track-card:hover, .album-card:hover {
   transform: translateY(-5px);
 }
-
-/* Единое закругление для всех элементов */
 .rounded-app-bar {
   padding: 0 !important;
   width: 100vw !important;
   left: 0 !important;
   right: 0 !important;
-  
 }
 .rounded-btn {
   border-radius: 50px !important;
-  /* width: 24px; height: 24px; */
 }
-
 .buttn {
-  width: 30px; 
+  width: 30px;
   height: 30px;
-  background-color: transparent ;
-  opacity: 0.7; 
+  background-color: transparent;
+  opacity: 0.7;
   transition: opacity 0.2s;
   box-shadow: 0 4px 20px rgba(255, 255, 255, 0);
-  /* background-color: #ffffff; */
-
 }
-
 .buttn:hover {
-  
-  background-color: #dbd9d994; 
+  background-color: #dbd9d994;
   opacity: 1;
-  
-  
-
 }
-
 .rounded-text-field {
   border-radius: 12px !important;
 }
@@ -667,6 +648,8 @@ export default {
   border-radius: 12px !important;
 }
 .rounded-drawer {
+  margin: 12px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
   border-radius: 12px !important;
 }
 .rounded-dialog {
@@ -679,42 +662,31 @@ export default {
   border-radius: 12px;
   padding: 10px;
 }
-
-/* .title {
-  color: #fdfdfd;
-} */
-
 .dialog-cover {
   border-radius: 8px !important;
   margin-top: 10px;
 }
-
 .track-item {
   padding: 8px 0;
 }
-
 .action-buttons {
   display: flex;
   align-items: center;
   gap: 8px;
 }
-
 .d-flex {
   display: flex;
 }
-
 .align-center {
   align-items: center;
 }
-
 .justify-space-between {
   justify-content: space-between;
 }
-
 .w-100 {
   width: 100%;
 }
+.rounded-tabs {
+  border-radius: 12px !important;
+}
 </style>
-
-
-

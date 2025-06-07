@@ -56,15 +56,23 @@
               @update:modelValue="updateVolume"
             ></v-slider>
           </div>
+          <!-- <v-btn icon @click="toggleFavorite" class="rounded-btn ml-2">
+            <like v-if="!isInFavorites" theme="outline" size="24" />
+            <like v-else theme="two-tone" size="24" :fill="[,'#ff0002']" />
+          </v-btn> -->
+          
           <v-btn icon @click="toggleRepeat" class="rounded-btn">
-            <play-once :size="24" :fill="repeatMode === 'single' ? '#BB86FC' : '#FFFFFF'" />
+            <play-once v-if="repeatMode === 'single'" theme="outline" size="24" fill='#BB86FC' />
+            <play-once v-else  size="24"  />
           </v-btn>
+      
           <v-btn icon @click="toggleShuffle" class="rounded-btn">
-            <!-- <shuffle-one v-if="shuffle" :size="24" />
-            <shuffle v-else :size="24" /> -->
-            <shuffle-one :size="24" :fill="shuffle ? '#BB86FC' : '#FFFFFF'" />
-
+            <shuffle-one v-if="shuffle" theme="outline" size="24" fill='#BB86FC' />
+            <shuffle-one v-else  size="24"  />
           </v-btn>
+          
+          
+
           <v-btn icon @click="showQueue = !showQueue" class="rounded-btn ml-2">
             <music-list theme="outline" size="30" />
           </v-btn>
@@ -132,6 +140,11 @@
                     @update:modelValue="updateVolume"
                   ></v-slider>
                 </div>
+                <!-- <v-btn icon @click="toggleFavorite" class="rounded-btn ml-2">
+                  <like v-if="!isInFavorites" theme="outline" size="24" />
+                  <like v-else theme="two-tone" size="24" :fill="[,'#ff0002']" />
+                </v-btn> -->
+                
                 <v-btn icon @click="toggleRepeat" class="rounded-btn ml-2">
                   <play-once :size="24" :fill="repeatMode === 'single' ? '#BB86FC' : '#FFFFFF'" />
                 </v-btn>
@@ -263,6 +276,31 @@ export default {
     },
   },
   methods: {
+    // isInFavorites(item, isAlbum = false) {
+    //   if (isAlbum) {
+    //     return this.favoriteAlbums.some(a => a.album_id === item.album_id)
+    //   }
+    //   return this.favoriteTracks.some(t => t.track_id === item.track_id)
+    // },
+    // async toggleFavorite(item, isAlbum = false) {
+    //   try {
+    //     const endpoint = isAlbum ? `/api/favorites/album/${item.album_id}` : `/api/favorites/track/${item.track_id}`
+    //     if (this.isInFavorites(item, isAlbum)) {
+    //       await axios.delete(`http://localhost:5000${endpoint}`, {
+    //         headers: { Authorization: `Bearer ${this.authStore.token}` },
+    //       })
+    //       this.$root.showSnackbar(`${isAlbum ? 'Альбом' : 'Трек'} "${item.title}" удалён из избранного`)
+    //     } else {
+    //       await axios.post(`http://localhost:5000${endpoint}`, {}, {
+    //         headers: { Authorization: `Bearer ${this.authStore.token}` },
+    //       })
+    //       this.$root.showSnackbar(`${isAlbum ? 'Альбом' : 'Трек'} "${item.title}" добавлен в избранное`)
+    //     }
+    //     await this.fetchFavorites()
+    //   } catch (error) {
+    //     this.$root.showSnackbar(`Ошибка: ${error.response?.data?.message || error.message}`, 'error')
+    //   }
+    // },
     toggleExpanded() {
       this.expanded = !this.expanded
     },
@@ -308,7 +346,7 @@ export default {
     },
     toggleShuffle() {
       if (this.shuffle && this.queue.length > 1) {
-        this.$emit('restoreQueue', this.originalQueue) // Восстанавливаем исходную очередь
+        this.$emit('restoreQueue', this.originalQueue) 
       }
       this.shuffle = !this.shuffle
       if (this.shuffle && this.queue.length > 1) {
@@ -322,9 +360,9 @@ export default {
         const j = Math.floor(Math.random() * (i + 1))
         ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
       }
-      this.queue = [currentTrack, ...shuffled] // Локальное обновление для отображения
+      this.queue = [currentTrack, ...shuffled] 
       this.currentQueueIndex = 0
-      this.$emit('updateQueue', this.queue) // Передаём обновление в Home.vue
+      this.$emit('updateQueue', this.queue) 
     },
     handleTrackEnd() {
       if (this.shuffle && this.queue.length > 1) {

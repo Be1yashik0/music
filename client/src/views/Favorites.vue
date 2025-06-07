@@ -56,11 +56,7 @@
             Главная
           </v-list-item-icon>
         </v-list-item>
-        <v-list-item to="/playlists" v-if="authStore.user">
-          <v-list-item-icon>
-            Мои плейлисты
-          </v-list-item-icon>
-        </v-list-item>
+        
         <v-list-item to="/upload" v-if="authStore.user">
           <v-list-item-icon>
             Загрузить музыку
@@ -100,10 +96,15 @@
                     height="150"
                     @error="console.error('Failed to load cover:', `http://localhost:5000${track.cover_url || '/uploads/covers/default.jpg'}`)"
                   ></v-img>
+                  <v-btn icon @click="removeFromFavorites(track, false) "   class="remove_buttn">
+                      <dislike-two theme="two-tone" size="24" :fill="[,'#ff0002']"/>
+                    </v-btn>
                   <v-card-title class="text-subtitle-1">{{ track.title }}</v-card-title>
                   <v-card-subtitle class="text-caption">{{ track.artist }}</v-card-subtitle>
+                 
                   <v-card-actions>
-                    <v-btn color="primary" text @click="playTrack(track)" class="rounded-btn">Воспроизвести</v-btn>
+                    <!-- <v-btn color="primary" text @click="playTrack(track)" class="rounded-btn">Воспроизвести</v-btn> -->
+                    
                   </v-card-actions>
                 </v-card>
               </v-col>
@@ -111,7 +112,7 @@
           </v-window-item>
 
           <!-- Вкладка альбомов -->
-          <v-window-item value="albums">
+          <v-window-item value="albums" >
             <v-row>
               <v-col v-for="album in favoriteAlbums" :key="album.album_id" cols="12" sm="6" md="4" lg="2">
                 <v-card class="album-card rounded-card">
@@ -120,11 +121,15 @@
                     height="150"
                     @error="console.error('Failed to load album cover:', `http://localhost:5000${album.cover_url || '/uploads/covers/default.jpg'}`)"
                   ></v-img>
+                  <v-btn icon @click="removeFromFavorites(album, true) "   class="remove_buttn">
+                    <dislike-two theme="two-tone" size="24" :fill="[,'#ff0002']"/>
+                  </v-btn>
                   <v-card-title class="text-subtitle-1">{{ album.title }}</v-card-title>
                   <v-card-subtitle class="text-caption">{{ album.artist }}</v-card-subtitle>
-                  <v-card-text class="text-caption">Количество треков: {{ album.track_count || 0 }}</v-card-text>
+                  <!-- <v-card-text class="text-caption">Количество треков: {{ album.track_count  }}</v-card-text> -->
                   <v-card-actions>
-                    <v-btn color="primary" text @click="playAlbum(album)" class="rounded-btn">Воспроизвести</v-btn>
+                    <!-- <v-btn color="primary" text @click="playAlbum(album)" class="rounded-btn">Воспроизвести</v-btn> -->
+                    
                   </v-card-actions>
                 </v-card>
               </v-col>
@@ -145,7 +150,7 @@ export default {
   data() {
     return {
       drawer: false,
-      activeTab: 'tracks', // Инициализируем с первым значением вкладки
+      activeTab: 'tracks', 
       favoriteTracks: [],
       favoriteAlbums: [],
     }
@@ -189,6 +194,23 @@ export default {
     playAlbum(album) {
       this.$emit('playAlbum', album)
     },
+    async removeFromFavorites(item, isAlbum = false) {
+      if (!confirm(`Удалить ${isAlbum ? 'альбом' : 'трек'} "${item.title}" из избранного?`)) return
+      try {
+        const endpoint = isAlbum ? `/api/favorites/album/${item.album_id}` : `/api/favorites/track/${item.track_id}`
+        await axios.delete(`http://localhost:5000${endpoint}`, {
+          headers: { Authorization: `Bearer ${this.authStore.token}` },
+        })
+        if (isAlbum) {
+          this.favoriteAlbums = this.favoriteAlbums.filter(a => a.album_id !== item.album_id)
+        } else {
+          this.favoriteTracks = this.favoriteTracks.filter(t => t.track_id !== item.track_id)
+        }
+        this.$root.showSnackbar(`${isAlbum ? 'Альбом' : 'Трек'} удалён из избранного`)
+      } catch (error) {
+        this.$root.showSnackbar(`Ошибка удаления: ${error.response?.data?.message || error.message}`, 'error')
+      }
+    }, 
   },
 }
 </script>
@@ -217,6 +239,11 @@ export default {
   left: 0 !important;
   right: 0 !important;
 }
+
+.remove_buttn{
+  /* background-color: #ffffff; */
+  box-shadow: 0 0px 0px rgba(0, 0, 0, 0);
+}
 .rounded-btn {
   border-radius: 50px !important;
 }
@@ -226,12 +253,14 @@ export default {
 .rounded-card {
   border-radius: 18px !important;
   overflow: hidden;
+  height: 280px;
 }
 .rounded-tabs {
   border-radius: 12px !important;
 }
 .rounded-drawer {
   margin: 12px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
   border-radius: 10px !important;
 }
 .rounded-title {

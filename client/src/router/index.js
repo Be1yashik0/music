@@ -2,11 +2,12 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Login from '../views/Login.vue'
 import Home from '../views/Home.vue'
 import Profile from '../views/Profile.vue'
-import Favorites from '../views/Favorites.vue' // Добавляем импорт
+import Favorites from '../views/Favorites.vue'
 import Search from '../views/Search.vue'
 import Admin from '../views/Admin.vue'
 
 const routes = [
+  
   {
     path: '/login',
     name: 'Login',
@@ -28,9 +29,17 @@ const routes = [
     component: () => import('../views/Upload.vue'),
   },
 
-  { path: '/favorites', name: 'Favorites', component: Favorites },
+  { 
+    path: '/favorites', 
+    name: 'Favorites', 
+    component: Favorites 
+  },
   
-  { path: '/search', component: Search },
+  { 
+    path: '/search', 
+    component: Search 
+  },
+
 
    {
     path: '/admin',

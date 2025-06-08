@@ -9,16 +9,17 @@
       <v-toolbar-title class="title">T-shka</v-toolbar-title>
       <v-spacer></v-spacer>
       <v-text-field
-        v-model="searchQuery"
-        label="Поиск..."
-        solo
-        dense
-        flat
-        prepend-inner-icon="mdi-magnify"
-        class="mx-2 rounded-text-field"
-        style="max-width: 300px;"
-        hide-details
-        @input="search"
+      v-model="searchQuery"
+      ref="searchInput"
+      label="Поиск..."
+      solo
+      dense
+      flat
+      prepend-inner-icon="mdi-magnify"
+      class="mx-2 rounded-text-field"
+      style="max-width: 300px;"
+      hide-details
+      @input="search"
       ></v-text-field> 
       <v-list-item @click="toggleTheme" class="toggle-theme">
         <v-list-item-icon>
@@ -131,21 +132,24 @@
               </v-col>
             </v-row>
           </v-window-item>
+
+          
         </v-window>
       </v-container>
     </v-main>
 
     <v-dialog v-model="trackDialog" max-width="500" class="rounded-dialog track-dialog">
-      <v-card v-if="selectedTrack" class="rounded-card">
+      <v-card v-if="selectedTrack" class="rounded-card ">
         <v-img
           :src="`http://localhost:5000${selectedTrack.cover_url || '/uploads/covers/default.jpg'}`"
           height="400"
           class="dialog-cover"
         ></v-img>
-        <v-card-title>{{ selectedTrack.title }}</v-card-title>
+        <v-card-title >{{ selectedTrack.title }}</v-card-title>
         <v-card-subtitle>{{ selectedTrack.artist }}</v-card-subtitle>
         <v-card-text>
           <div class="d-flex align-center album-controls ">
+            
             <v-btn icon @click="playTrack(selectedTrack)" class="rounded-btn buttn">
               <play-one theme="outline" size="24" />
             </v-btn>
@@ -155,17 +159,14 @@
             <v-btn icon @click="addToQueue(selectedTrack)" class="rounded-btn buttn">
               <fold-up-one theme="outline" size="24" />
             </v-btn>
-            <!-- <v-btn icon @click="addToFavorites(selectedTrack)" class="rounded-btn buttn">
-              <like theme="outline" size="24" />
-            </v-btn> -->
             <v-btn icon @click="toggleFavorite(selectedTrack)" class="rounded-btn buttn">
               <like v-if="!isInFavorites(selectedTrack)" theme="outline" size="24"  />
               <like v-else  theme="two-tone" size="24" :fill="[,'#ff0002']" />
             </v-btn>
+            
           </div>
           <div class="mt-4">
             <p>Дата выпуска: {{ formatDate(selectedTrack.release_date) }}</p>
-            <!-- <p>Прослушиваний: {{ selectedTrack.listens }}</p> -->
             <p>Жанр: {{ selectedTrack.genre }}</p>
           </div>
         </v-card-text>
@@ -173,7 +174,7 @@
     </v-dialog>
 
     <v-dialog v-model="albumDialog" max-width="600" class="rounded-dialog album-dialog">
-      <v-card v-if="selectedAlbum" class="rounded-card">
+      <v-card v-if="selectedAlbum" class="rounded-card " >
         <v-img
           :src="`http://localhost:5000${selectedAlbum.cover_url || '/uploads/covers/default.jpg'}`"
           height="200"
@@ -181,7 +182,9 @@
         ></v-img>
         <v-card-title>{{ selectedAlbum.title }}</v-card-title>
         <v-card-subtitle>{{ selectedAlbum.artist }}</v-card-subtitle>
+        
         <div class="d-flex align-center album-controls mb-4">
+          
           <v-btn icon @click="playAlbum(selectedAlbum)" class="rounded-btn buttn mx-2">
             <play-one theme="outline" size="32" />
           </v-btn>
@@ -208,9 +211,6 @@
               <div class="d-flex align-center justify-space-between w-100 track-item">
                 <v-list-item-title>{{ track.title }}</v-list-item-title>
                 <div class="action-buttons" :class="{ 'visible': track.hovered }">
-                  <!-- <v-btn icon @click="playAlbum(selectedAlbum, track)" class="rounded-btn buttn">
-                    <play-one theme="outline" size="24" />
-                  </v-btn> -->
                   <v-btn icon @click="addToQueue(track)" class="rounded-btn buttn">
                     <fold-up-one theme="outline" size="24" />
                   </v-btn>
@@ -227,12 +227,13 @@
           </v-list>
           <div class="mt-4">
             <p>Дата выпуска: {{ formatDate(selectedAlbum.release_date) }}</p>
-            <!-- <p>Прослушиваний: {{ selectedAlbum.listens }}</p> -->
             <p>Жанр: {{ selectedAlbum.genre }}</p>
           </div>
         </v-card-text>
       </v-card>
     </v-dialog>
+
+
 
     <Player
       v-if="currentTrack"
@@ -271,8 +272,11 @@ export default {
       searchQuery: '',
       tracks: [],
       albums: [],
+      playlists: [],
       trackDialog: false,
       albumDialog: false,
+      createPlaylistDialog: false,
+      addToPlaylistDialog: false,
       selectedTrack: null,
       selectedAlbum: null,
       currentTrack: null,
@@ -280,7 +284,10 @@ export default {
       queue: [],
       currentQueueIndex: -1,
       currentTime: 0,
-      activeTab: 'tracks', 
+      activeTab: 'tracks',
+      newPlaylistTitle: '',
+      favoriteTracks: [],
+      favoriteAlbums: [],
     }
   },
   computed: {
@@ -289,7 +296,6 @@ export default {
     },
   },
   methods: {
-    
     toggleTheme() {
       this.$vuetify.theme.global.name = this.$vuetify.theme.current.dark ? 'light' : 'dark'
     },
@@ -341,16 +347,6 @@ export default {
         this.$root.showSnackbar(`Ошибка: ${error.response?.data?.message || error.message}`, 'error')
       }
     },
-    async addToPlaylist(album) {
-      try {
-        await axios.post('http://localhost:5000/api/playlists/add', { album_id: album.album_id }, {
-          headers: { Authorization: `Bearer ${this.authStore.token}` },
-        })
-        this.$root.showSnackbar('Альбом добавлен в мои плейлисты')
-      } catch (error) {
-        this.$root.showSnackbar(`Ошибка: ${error.response?.data?.error || error.message}`, 'error')
-      }
-    },
     async fetchAlbums() {
       try {
         const response = await axios.get('http://localhost:5000/api/albums')
@@ -369,12 +365,17 @@ export default {
         this.favoriteTracks = response.data.tracks
         this.favoriteAlbums = response.data.albums
       } catch (error) {
-        this.$root.showSnackbar(`Ошибка загрузки избранного: ${error.response?.data?.message || error.message}`, 'error')
+        // this.$root.showSnackbar(`Ошибка загрузки избранного: ${error.response?.data?.message || error.message}`, 'error')
       }
     },
-    goToArtist(artist) {
+      goToArtist(artist) {
       if (artist) {
-        this.$router.push({ path: '/search', query: { artist } })
+        this.searchQuery = artist
+        this.search()
+        this.$nextTick(() => {
+          const searchInput = this.$refs.searchInput.$el.querySelector('input')
+          if (searchInput) searchInput.focus()
+        })
       }
     },
     async search() {
@@ -384,12 +385,17 @@ export default {
         return
       }
       try {
-        const response = await fetch(`http://localhost:5000/api/search?q=${this.searchQuery}`)
-        const data = await response.json()
-        this.tracks = data.tracks
-        this.albums = data.albums
+        const response = await axios.get(`http://localhost:5000/api/search?q=${encodeURIComponent(this.searchQuery)}`, {
+          headers: { Authorization: `Bearer ${this.authStore.token}` },
+        })
+        this.tracks = response.data.tracks.map(track => ({
+          ...track,
+          audio_url: track.audio_url || `http://localhost:5000${track.audio_path || '/uploads/audio/default.mp3'}`,
+        }))
+        this.albums = response.data.albums
       } catch (error) {
         console.error('Search failed:', error)
+        this.$root.showSnackbar(`Ошибка поиска: ${error.response?.data?.message || error.message}`, 'error')
       }
     },
     showTrackDetails(track) {
@@ -482,7 +488,7 @@ export default {
       if (this.currentQueueIndex < this.queue.length - 1) {
         this.currentQueueIndex++
       } else {
-        this.currentQueueIndex = 0 // Повтор очереди
+        this.currentQueueIndex = 0
       }
       this.currentTrack = this.queue[this.currentQueueIndex]
       this.isPlaying = true
@@ -505,7 +511,7 @@ export default {
         this.currentTrack = this.queue[this.currentQueueIndex]
         this.isPlaying = true
       } else {
-        this.currentQueueIndex = 0 // Повтор очереди
+        this.currentQueueIndex = 0 
         this.currentTrack = this.queue[this.currentQueueIndex]
         this.isPlaying = true
       }
@@ -530,6 +536,7 @@ export default {
         setCache('currentQueueIndex', -1)
       }
     },
+  
   },
   watch: {
     currentTrack(newVal) {
@@ -558,6 +565,7 @@ export default {
     await this.fetchTracks()
     await this.fetchAlbums()
     await this.fetchFavorites()
+    
 
     const cachedTrack = getCache('currentTrack')
     const cachedQueue = getCache('queue')
@@ -584,7 +592,7 @@ export default {
 .album-controls {
   display: flex;
   justify-content: center;
-  gap: 10px; /* Расстояние между кнопками */
+  gap: 10px; 
 }
 .track-item .action-buttons {
   opacity: 0;

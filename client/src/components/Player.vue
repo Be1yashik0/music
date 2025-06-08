@@ -79,7 +79,7 @@
         </v-col>
       </v-row>
 
-      <!-- Расширенный плеер -->
+     <!-- Расширенный плеер -->
       <v-row v-if="expanded" align="center" no-gutters class="w-100 expanded-row">
         <v-col cols="6" class="d-flex justify-center align-center pa-4">
           <v-img
@@ -90,15 +90,14 @@
           ></v-img>
         </v-col>
         <v-col cols="6" class="d-flex flex-column justify-space-between pa-4">
-          
-          <div>
+          <div class="track-info">
+            <!-- Название трека и артист по центру -->
+            <div class="text-center track-title-container">
+              <div class="track-title">{{ track.title }}</div>
+              <div class="track-artist">{{ track.artist }}</div>
+            </div>
             <!-- Управление воспроизведением -->
-            <v-row class="text-center">
-              <div  >
-                <div >{{ track.title }}-{{ track.artist }}</div>
-              </div>
-              <!-- <v-card-title>{{  track.title  }}</v-card-title>
-              <v-card-subtitle>{{ track.artist }}</v-card-subtitle> -->
+            <v-row class="text-center mt-4">
               <v-col cols="12">
                 <v-btn icon @click="$emit('playPrev')" class="rounded-btn player-reg">
                   <go-start theme="outline" size="30" stroke-linejoin="bevel"/>
@@ -140,19 +139,11 @@
                     @update:modelValue="updateVolume"
                   ></v-slider>
                 </div>
-                <!-- <v-btn icon @click="toggleFavorite" class="rounded-btn ml-2">
-                  <like v-if="!isInFavorites" theme="outline" size="24" />
-                  <like v-else theme="two-tone" size="24" :fill="[,'#ff0002']" />
-                </v-btn> -->
-                
                 <v-btn icon @click="toggleRepeat" class="rounded-btn ml-2">
                   <play-once :size="24" :fill="repeatMode === 'single' ? '#BB86FC' : '#FFFFFF'" />
                 </v-btn>
                 <v-btn icon @click="toggleShuffle" class="rounded-btn ml-2">
-                  <!-- <shuffle-one v-if="shuffle" :size="24" />
-                  <shuffle v-else :size="24" /> -->
                   <shuffle-one :size="24" :fill="shuffle ? '#BB86FC' : '#FFFFFF'" />
-
                 </v-btn>
                 <v-btn icon @click="showQueue = !showQueue" class="rounded-btn ml-2">
                   <music-list theme="outline" size="30" />
@@ -557,5 +548,40 @@ export default {
 
 .cursor-pointer {
   cursor: pointer;
+}
+
+.track-info {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.track-title-container {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.track-title {
+  font-size: 3rem; 
+  font-weight: 700;
+  margin-bottom: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80%;
+}
+
+.track-artist {
+  font-size: 1.5rem; 
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80%;
 }
 </style>

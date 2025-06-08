@@ -321,7 +321,6 @@ app.delete('/api/albums/:album_id', authenticateToken, isAdmin, async (req, res)
     if (!album) {
       return res.status(404).json({ message: 'Album not found' })
     }
-    await Track.destroy({ where: { album_id: album.album_id } }) // Удаляем связанные треки
     await album.destroy()
     res.json({ message: 'Album deleted successfully' })
   } catch (error) {
@@ -347,8 +346,6 @@ app.delete('/api/users/:user_id', authenticateToken, isAdmin, async (req, res) =
     if (user.is_admin) {
       return res.status(403).json({ message: 'Cannot delete admin user' })
     }
-    await Track.destroy({ where: { user_id: user.user_id } }) // Удаляем треки пользователя
-    await Album.destroy({ where: { user_id: user.user_id } }) // Удаляем альбомы пользователя
     await user.destroy()
     res.json({ message: 'User deleted successfully' })
   } catch (error) {
@@ -432,6 +429,38 @@ app.get('/api/favorites', authenticateToken, async (req, res) => {
     res.json({ tracks, albums })
   } catch (error) {
     res.status(500).json({ message: 'Error fetching favorites', error: error.message })
+  }
+})
+
+// Поиск
+app.get('/api/search', authenticateToken, async (req, res) => {
+  try {
+    const { q } = req.query
+    if (!q || q.length < 2) {
+      return res.status(400).json({ message: 'Query must be at least 2 characters' })
+    }
+
+    const tracks = await Track.findAll({
+      where: {
+        [Sequelize.Op.or]: [
+          { title: { [Sequelize.Op.iLike]: `%${q}%` } },
+          { artist: { [Sequelize.Op.iLike]: `%${q}%` } },
+        ],
+      },
+    })
+
+    const albums = await Album.findAll({
+      where: {
+        [Sequelize.Op.or]: [
+          { title: { [Sequelize.Op.iLike]: `%${q}%` } },
+          { artist: { [Sequelize.Op.iLike]: `%${q}%` } },
+        ],
+      },
+    })
+
+    res.json({ tracks, albums })
+  } catch (error) {
+    res.status(500).json({ message: 'Error searching', error: error.message })
   }
 })
 

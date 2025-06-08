@@ -14,6 +14,12 @@ package-lock.json
 *.tmp
 *.swp
 
+*.jpg
+*.mp3
+
+*.png
+
+
 # Скомпилированные файлы и сборки
 dist/
 build/

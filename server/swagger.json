@@ -1,0 +1,144 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+      "title": "Music Streaming Service API",
+      "description": "API for managing tracks, albums, playlists, and user authentication.",
+      "version": "1.0.0",
+      "contact": {
+        "email": "diartnikitin@yandex.ru"
+      }
+    },
+    "servers": [
+      {
+        "url": "http://localhost:5000",
+        "description": "Local development server"
+      }
+    ],
+    "paths": {
+      "/api/tracks": {
+        "get": {
+          "summary": "Get list of tracks",
+          "responses": {
+            "200": {
+              "description": "Successful response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "track_id": { "type": "string" },
+                        "title": { "type": "string" },
+                        "artist": { "type": "string" },
+                        "audio_url": { "type": "string" },
+                        "cover_url": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/albums": {
+        "get": {
+          "summary": "Get list of albums",
+          "responses": {
+            "200": {
+              "description": "Successful response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "album_id": { "type": "string" },
+                        "title": { "type": "string" },
+                        "artist": { "type": "string" },
+                        "cover_url": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/albums/{album_id}/tracks": {
+        "get": {
+          "summary": "Get tracks for a specific album",
+          "parameters": [
+            {
+              "name": "album_id",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "track_id": { "type": "string" },
+                        "title": { "type": "string" },
+                        "artist": { "type": "string" },
+                        "audio_url": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/favorite/tracks": {
+        "post": {
+          "summary": "Add track to favorites",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "track_id": { "type": "string" }
+                  },
+                  "required": ["track_id"]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Successful operation"
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "securitySchemes": {
+        "bearerAuth": {
+          "type": "http",
+          "scheme": "bearer",
+          "bearerFormat": "JWT"
+        }
+      }
+    },
+    "security": [
+      {
+        "bearerAuth": []
+      }
+    ]
+  } 
